@@ -1,0 +1,123 @@
+// Simulation of a branched axon.
+// 
+// Shows effects of different safety factors at branch point.
+// Similar to results of Manor et al Biophysical J. 60:1424-1437, 1991
+// 
+// Bruce Graham, University of Stirling <bruce.graham@stir.ac.uk>
+// Date: 26-4-2013; 10-1-23
+
+{load_file("nrngui.hoc")}
+
+celsius = 20
+
+// Create a long, branched axon
+GR = 1
+dpar = 1
+dchild = 0.63
+
+create axon
+access axon
+axon nseg = 2000
+axon L = 2000
+axon diam = dpar
+axon insert hh
+
+create dl
+dl nseg = 2000
+dl L = 2000
+dl diam = dchild
+dl insert hh
+
+create dr
+dr nseg = 2000
+dr L = 2000
+dr diam = dchild
+dr insert hh
+
+forall Ra = 100	// ohm-cm
+
+connect dl(0), axon(1)
+connect dr(0), axon(1)
+
+// Insert a current clamp
+objref stim
+stim = new IClamp(0.01)
+stim.del = 0.5
+stim.dur = 0.2
+stim.amp = 10000
+
+// Set the simulation timestep (ms)
+dt = 0.0025 
+
+// Open a saved "session file" that brings up the graphs and panels
+xopen("axon-branched.ses")
+
+// set up recordings
+objref Pp5, P1, Lp2, Lp5  // Vectors that record voltages 
+objref t1, t2, t3, t4  // Vectors that record time
+Pp5 = new Vector()
+P1 = new Vector()
+Lp2 = new Vector()
+Lp5 = new Vector()
+t1 = new Vector()
+t2 = new Vector()
+t3 = new Vector()
+t4 = new Vector()
+axon cvode.record(&v(0.5), Pp5, t1)
+axon cvode.record(&v(1.0), P1, t2)
+dl cvode.record(&v(0.2), Lp2, t3)
+dl cvode.record(&v(0.5), Lp5, t4)
+
+// GR=8
+//dl diam = 2.52
+//dr diam = 2.52
+
+// GR = 1
+dl diam = 0.63
+dr diam = 0.63
+
+// GR = 0.5
+//dl diam = 0.3969
+//dr diam = 0.3969
+
+// Calculate child diameters for given GR
+proc axon_GR() {
+  dchild = dpar*((GR/2)^(2/3))
+  dl.diam = dchild
+  dr.diam = dchild
+}
+
+// calculate propagation speed
+speed = 0  // for GUI
+proc axon_speed() {
+  // distance
+  axon distance(0, 0.5)  // set origin
+  access dl
+  dist = distance(0.5)  // um (mid-pt child to mid-pt parent)
+  access axon
+  // times of AP peaks
+  ip = Pp5.max_ind()
+  tip = t1.x[ip]  // ms
+  ic = Lp5.max_ind()
+  tic = t4.x[ic]
+  // speed
+  speed = (dist / (tic-tip)) / 1000 // m/s
+  print "speed = ", speed
+}
+
+// GUI
+proc axon_pars() {
+  xpanel("Axon branch")
+  xvalue("GR", "GR")
+  xbutton("Calculate diams", "axon_GR()")
+  xvalue("Child diameter", "dchild")
+  xbutton("Calculate speed", "axon_speed()")
+  xvalue("speed (m/s)", "speed")
+  xpanel()
+}
+
+tstop=8
+axon_pars()
+//run()
+
+

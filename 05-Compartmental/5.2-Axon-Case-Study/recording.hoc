@@ -1,0 +1,61 @@
+// Long length of squid axon with H-H channels
+// Data recording and analysis
+// Bruce Graham, University of Stirling <bruce.graham@stir.ac.uk>
+// Date: 7-3-2019; 10-1-23
+
+objref vp25, vp5, vp75  // Vectors that record voltages 
+objref tp25, tp5, tp75  // Vectors that record time
+
+vp25 = new Vector()
+vp5 = new Vector()
+vp75 = new Vector()
+tp25 = new Vector()
+tp5 = new Vector()
+tp75 = new Vector()
+
+proc axon_record() {
+  axon cvode.record(&v(0.25), vp25, tp25)
+  axon cvode.record(&v(0.5), vp5, tp5)
+  axon cvode.record(&v(0.75), vp75, tp75)
+}
+
+objref fo
+strdef fno, fstem
+
+proc axon_store() { local i
+  // voltage traces
+  sprint(fno,"./Results/%s.dat", fstem)
+  fo = new File(fno)
+  fo.wopen()
+  for i=0, vp25.size-1 {
+    fo.printf("%g %g %g %g\n", tp25.x[i], vp25.x[i], vp5.x[i], vp75.x[i])
+  }
+  fo.close()
+}
+
+// calculate propagation speed
+speed = 0  // for GUI
+proc axon_speed() {
+  // distance
+  distance()
+  dist = distance(0.75)-distance(0.25)  // um
+  // times of AP peaks
+  i25 = vp25.max_ind()
+  tip25 = tp25.x[i25]  // ms
+  i75 = vp75.max_ind()
+  tip75 = tp75.x[i75]
+  // speed
+  speed = (dist / (tip75-tip25)) / 1000 // m/s
+  print "speed = ", speed
+}
+
+// GUI
+proc axon_pars() {
+  xpanel("Axon parameters")
+  xvalue("celsius")
+  xvalue("diameter", "axon.diam")
+  xvalue("segments", "axon.nseg")
+  xbutton("Calculate speed", "axon_speed()")
+  xvalue("speed (m/s)", "speed")
+  xpanel()
+}

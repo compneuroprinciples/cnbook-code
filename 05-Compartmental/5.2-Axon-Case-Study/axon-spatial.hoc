@@ -1,0 +1,49 @@
+// Simulation of a Hodgkin-Huxley membrane action potential
+// along a uniform squid axon
+// 
+// Code derived from that used to produce Figure 5.6 in "Principles
+// of Computational Modelling in Neuroscience" (2nd Edition, CUP, 2023) 
+// Sterratt, Graham, Gillies, Einevoll and Willshaw.
+// 
+// Bruce Graham, University of Stirling <bruce.graham@stir.ac.uk>
+// Date: 7-3-2019; 10-1-23
+
+{load_file("nrngui.hoc")}
+
+// Create a long, uniform axon
+create axon
+access axon
+//celsius = 6.3
+celsius = 18.5
+axon nseg = 3000
+axon L = 300000
+axon diam = 476
+axon insert hh
+
+// Insert a current clamp
+objref stim
+stim = new IClamp(0.01)
+stim.del = 0.5
+stim.dur = 0.2
+stim.amp = 10000
+
+// Set the simulation timestep (ms)
+dt = 0.0025 
+
+// Open a saved "session file" that brings up the graphs and panels
+xopen("axon-spatial.ses")
+xopen("recording.hoc")
+axon_pars()
+
+
+celsius = 18.5
+axon diam = 476
+axon nseg = 3000
+axon_record()
+tstop=30
+
+//run()
+//fstem = "HHaxon_Vvst_T18p5"
+//axon_store()
+
+
