@@ -1,0 +1,30 @@
+/* Create a single cell containing soma and dendrite
+   Generate IF curve for cell - example solution
+    
+  Author: B. Graham, Computing Science & Maths, University of Stirling, U.K.
+  URL: www.cs.stir.ac.uk/~bpg/  Email: b.graham@cs.stir.ac.uk
+  
+  Last update: BPG 16-5-13
+*/
+
+load_file("nrngui.hoc")
+load_file("simpcell.hoc")
+
+
+// Create neuron
+objref cell
+cell = new SimpCell()
+
+access cell.soma
+
+objref icl, apc
+
+icl = new IClamp(0.5)
+icl.del = 0
+icl.dur = 1000
+icl.amp = 0.1
+
+apc = new APCount(0.5)
+apc.thresh = -30
+
+xopen("FIcurve_basic.ses")
