@@ -1,0 +1,76 @@
+// Simulation of the effect of A-type current on neuronal firing
+// 
+// This code reproduces some of the data in Figure 5.9 in "Principles
+// of Computational Modelling in Neuroscience" by Sterratt, Graham,
+// Gillies and Willshaw.
+// 
+// Please report any problems to David Sterratt <david.c.sterratt@ed.ac.uk>
+
+// Create the neuron
+create soma
+access soma
+
+soma {
+    // Set up the size of the cell
+    L = 100
+    nseg = 1 
+    diam = 500
+    // Insert channels
+    insert csna
+    insert csk
+    insert cska
+    insert csl
+}
+
+// Set reversal potentials
+ek  = -7
+ena =  50
+
+// Set the simulation temperature (degC)
+celsius = 18
+
+// Insert a current clamp
+objref stim
+stim = new IClamp(0.5)
+stim.del = 50
+stim.dur = 1000
+stim.amp = 12.89
+
+// Open a saved "session file" that brings up the graphs and panels
+load_file("cs.ses")
+
+// HH values: e_csl = -72.8 to give resting membrane potential of -73\mV
+// Threshold for zero to 1 spike  around 8.5-8.6
+// Threshold for 1 to many spikes around 11.2-11.3
+
+proc typeI_pars() {
+    e_csl = -22
+    gbar_cska = 0.0477
+}
+
+proc typeI_thresh_curr() {
+    stim.amp = 12.89
+    //12.745
+}
+
+proc typeII_pars() {
+    e_csl = -72.8
+    gbar_cska = 0
+}
+
+proc typeII_thresh_curr() {
+    stim.amp = 11.3
+}
+
+typeI_pars()
+typeI_thresh_curr()
+
+xpanel("Parameters")
+//xlabel("Parameter set")
+xradiobutton("Type I parameters" , "typeI_pars()" , 1)
+xradiobutton("Type II parameters", "typeII_pars()")
+//xlabel("Stimulation current")
+xvalue("Stimulation current (nA)", "stim.amp", 1)
+xbutton("Set Type I threshold current" , "typeI_thresh_curr()")
+xbutton("Set Type II threshold current", "typeII_thresh_curr()")
+xpanel(368,26) 
