@@ -1,0 +1,75 @@
+{load_file("nrngui.hoc")}
+objectvar save_window_, rvp_
+objectvar scene_vector_[5]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+{pwman_place(0,0,0)}
+{
+xpanel("Synapse parameters", 0)
+STINT = 10
+xvalue("Stimulus interval (ms)","STINT", 0,"", 0, 0 )
+STP0 = 0.2
+xvalue("Release probability","STP0", 0,"", 0, 0 )
+STPdel = 0.05
+xvalue("Facilitation factor","STPdel", 0,"", 0, 0 )
+STTAUF = 100
+xvalue("Facilitation recovery (ms)","STTAUF", 0,"", 0, 0 )
+STNKR = 0.2
+xvalue("Vesicle recovery (/s)","STNKR", 0,"", 0, 0 )
+xbutton("Update synapse","set_syn()")
+xpanel(0,528)
+}
+{
+xpanel("RunControl", 0)
+v_init = -65
+xvalue("Init","v_init", 1,"stdinit()", 1, 1 )
+xbutton("Init & Run","run()")
+xbutton("Stop","stoprun=1")
+runStopAt = 5
+xvalue("Continue til","runStopAt", 1,"{continuerun(runStopAt) stoprun=1}", 1, 1 )
+runStopIn = 1
+xvalue("Continue for","runStopIn", 1,"{continuerun(t + runStopIn) stoprun=1}", 1, 1 )
+xbutton("Single Step","steprun()")
+t = 100
+xvalue("t","t", 2 )
+tstop = 100
+xvalue("Tstop","tstop", 1,"tstop_changed()", 0, 1 )
+dt = 0.025
+xvalue("dt","dt", 1,"setdt()", 0, 1 )
+steps_per_ms = 40
+xvalue("Points plotted/ms","steps_per_ms", 1,"setdt()", 0, 1 )
+screen_update_invl = 0.05
+xvalue("Scrn update invl","screen_update_invl", 1,"", 0, 1 )
+realtime = 0.00999999
+xvalue("Real Time","realtime", 0,"", 0, 1 )
+xpanel(0,96)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,100,-0.1,-1.86265e-09)
+scene_vector_[2] = save_window_
+{save_window_.view(0, -0.1, 100, 0.1, 284, 96, 300.6, 200.8)}
+graphList[1].append(save_window_)
+save_window_.save_name("graphList[1].")
+save_window_.addexpr("vcl.i", 1, 1, 0.8, 0.9, 2)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,100,0,1)
+scene_vector_[3] = save_window_
+{save_window_.view(0, 0, 100, 1, 288, 432, 300.6, 200.8)}
+graphList[2].append(save_window_)
+save_window_.save_name("graphList[2].")
+save_window_.addexpr("stim.pv", 1, 1, 0.8, 0.9, 2)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,100,0,1)
+scene_vector_[4] = save_window_
+{save_window_.view(0, 0, 100, 1, 288, 768, 300.6, 200.8)}
+graphList[2].append(save_window_)
+save_window_.save_name("graphList[2].")
+save_window_.addvar("stim.n", 1, 1, 0.8, 0.9, 2)
+}
+objectvar scene_vector_[1]
+{doNotify()}

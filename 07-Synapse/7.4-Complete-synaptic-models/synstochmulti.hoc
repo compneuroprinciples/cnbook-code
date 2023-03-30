@@ -1,0 +1,142 @@
+/*----------------------------------------------------------------------------
+
+    Synapse with stochastic vesicle release and recycling
+	- multiple release sites
+    -------------------------------------------------------------
+
+B. Graham, Computing Science & Maths, University of Stirling
+(Contact: bruce.graham@stir.ac.uk)
+Version 1.1 4-1-07; 8-1-23
+
+----------------------------------------------------------------------------*/
+
+load_file("nrngui.hoc")
+
+//----------------------------------------------------------------------------
+//  create pre and postsynaptic compartments and insert passive properties
+//----------------------------------------------------------------------------
+
+create AXON, POST
+N = 500
+objectvar stim[N], nc[N], ampa[N]
+ 
+forall {
+  diam=20
+  L=20
+  Ra=200
+  insert pas
+  g_pas=1/50000
+  e_pas=v_init
+}
+
+
+//----------------------------------------------------------------------------
+//  create AMPA receptors
+//----------------------------------------------------------------------------
+
+ampa_type = 0
+
+for i = 0, N-1 {
+
+if (ampa_type == 0) {
+// Simple scheme (see Destexhe et al, 1998)
+POST ampa[i] = new AMPA2s(0.5)
+Alpha_AMPA2s = 4 // /mM/ms
+Beta_AMPA2s = 1 // /ms
+Cdur_AMPA2s = 1	// msecs
+weight = 0.001	// gmax=1nS
+}
+
+if (ampa_type == 1) {
+// Desensitising scheme
+POST ampa[i] = new AMPA5s(0.5)
+ampa[i].gmax = 1	// nS
+Erev_AMPA5s = 0	// mV
+Camp_AMPA5s = 1	// mM
+Cdur_AMPA5s = 1	// msecs
+Rb_AMPA5s = 13 // /mM/ms
+Ru1_AMPA5s = 0.3 // /ms
+Ru2_AMPA5s = 200 // /ms
+Rd_AMPA5s = 10 // /ms
+Rr_AMPA5s = 0.02 // /ms
+Ro_AMPA5s = 100 // /ms
+Rc_AMPA5s = 1 // /ms
+weight = 1
+}
+
+}
+
+//----------------------------------------------------------------------------
+//  create presynaptic stimulus 
+//	- includes stochastic vesicle release and recycling (BPG 4-1-07)
+//----------------------------------------------------------------------------
+
+for i = 0, N-1 {
+
+AXON stim[i] = new StochStim(0.5)
+stim[i].interval = 10	// 100Hz
+stim[i].number = 100
+stim[i].start = 10
+stim[i].noise = 0
+stim[i].p0 = 0.2
+stim[i].p1 = 0.05
+stim[i].tauf = 100
+stim[i].n0 = 1
+stim[i].kr = 0.0002
+nc[i] = new NetCon(stim[i], ampa[i], -20, 1, weight)
+
+}
+
+//----------------------------------------------------------------------------
+//  useful functions
+//----------------------------------------------------------------------------
+
+STINT = 10
+STP0 = 0.2
+STPdel = 0.05
+STTAUF = 100	// ms
+STNKR = 0.2	// s-1
+
+proc set_syn() {
+  for i = 0, N-1 {
+    stim[i].interval = STINT	// 100Hz
+    stim[i].number = 100
+    stim[i].start = 10
+    stim[i].noise = 0
+    stim[i].p0 = STP0
+    stim[i].p1 = STPdel
+    stim[i].tauf = STTAUF
+    stim[i].n0 = 1
+    stim[i].kr = STNKR/1000	// ms-1
+  }
+}
+
+// GUI
+proc syn_pars() {
+  xpanel("Synapse parameters")
+  xvalue("Stimulus interval (ms)", "STINT")
+  xvalue("Release probability", "STP0")
+  xvalue("Facilitation factor", "STPdel")
+  xvalue("Facilitation recovery (ms)", "STTAUF")
+  xvalue("Vesicle recovery (/s)", "STNKR")
+  xbutton("Update synapse", "set_syn()")
+  xpanel()
+}
+
+
+
+//----------------------------------------------------------------------------
+// record useful data
+//----------------------------------------------------------------------------
+
+// Record postsynaptic currents
+
+objectvar vcl
+
+// voltage clamp postsynaptic cell
+POST vcl = new VClamp(0.5)
+vcl.dur[0] = 1000
+vcl.amp[0] = v_init
+
+//syn_pars()	
+xopen("stochmulti.ses")
