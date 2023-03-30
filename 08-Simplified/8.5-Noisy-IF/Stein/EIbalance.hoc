@@ -1,0 +1,159 @@
+// Simulation of Stein model
+// 
+// This code reproduces Figure 8.15 in "Principles of Computational
+// Modelling in Neuroscience" (2nd Edn) by Sterratt, Graham, Gillies, Einevoll and Willshaw.
+// 
+// Please report any problems to David Sterratt <david.c.sterratt@ed.ac.uk>
+
+load_file("nrngui.hoc")
+
+// We have to create a dummy section for the IF neuron to sit on
+create dummy
+access dummy 
+
+// Neuron parameters
+tau0 = 2                                // Refractory period
+taum = 10                               // Membrane time const
+
+// Input parameters
+nuE = 100E-3                          // Excitatory firing rate in kHz
+nuI = 100E-3                          // Inhibitory firing rate in kHz
+NE = 300                                // # excitatory neurons
+NI = 150                                // # inbitory neurons
+JE =  0.1                            // Strength of excitatory input
+JI = -2*JE                             // Strength of inhibitory input
+
+
+// Create the neuron, stimulation sources and recordings
+objref ifn
+
+// Make an integrate and fire neuron
+ifn = new IntFire1(0.5)
+ifn.refrac = tau0
+ifn.tau = taum
+
+objref ns[1], ifn_ns_nc[1]
+proc make_inputs() { local NE, NI, JE, JI
+    NE = $1
+    NI = $2
+    JE = $3
+    JI = $4
+    
+    N = NE+NI
+    objref ns[N], ifn_ns_nc[N]
+    for i=0, N-1 {
+        // External random input
+        ns[i] = new NetStim()
+        ns[i].noise = 1
+        ns[i].number = 1E6
+        ns[i].start = 0
+        if (i<NE) {
+            ns[i].interval = 1/nuE
+            ifn_ns_nc[i] = new NetCon(ns[i], ifn, 0, 0, JE)
+        } else {
+            ns[i].interval = 1/nuE
+            ifn_ns_nc[i] = new NetCon(ns[i], ifn, 0, 0, JI)
+        }
+    }
+}
+
+make_inputs(NE, NI, JE, JI)
+
+// Create paramters interface
+xpanel("Parameters")
+xvalue("NE", "NE", 1, "make_inputs(NE, NI, JE, JI)")
+xvalue("NI", "NI", 1, "make_inputs(NE, NI, JE, JI)")
+xvalue("JE", "JE", 1, "make_inputs(NE, NI, JE, JI)")
+xvalue("JI", "JI", 1, "make_inputs(NE, NI, JE, JI)")
+xpanel(0, 510)
+
+
+// Record the spike times
+objref st, nc, nil
+st = new Vector()
+nc = new NetCon(ifn, nil)
+nc.record(st)
+
+// Run simulations for a section
+tstop=100
+
+// Load session file for graphs
+load_file("EIbalance.ses")
+
+
+objref isi
+// Compute ISI using Vector deriv function
+obfunc compute_isi  () { localobj isi
+    isi = new Vector()
+    isi.deriv(st, 1, 1)
+    return(isi)
+}
+
+// Compute the cofficient of variation
+func compute_cv  () { localobj isi
+    isi = compute_isi()
+    isi_mean = isi.mean()
+    isi_stdev = isi.stdev()
+    cv = isi_stdev/isi_mean
+    return(cv)
+}
+
+// The above recordings are made every time a simulation is run.
+// This function analyses tCO and tOC to give a histogram of open times
+obfunc compute_hist() { localobj isihist
+    isihist = $o1.histogram(0, 40, 1)
+    return(isihist)
+}
+
+// Create graphs in which to plot the histograms
+objref g
+g = new Graph(0)
+g.view(0, 0, 40, 250, 372, 430, 693.12, 300)
+
+// Create objects to hold the histogram plotting data
+objref hx, hy
+// This function plots the histogram
+proc plot_hist() { localobj hist, g
+    interval = 1
+    hist = $o1.histogram(0, 40, interval)
+    g = $o2
+    
+    // The code below (adapted from
+    // http://www.neuron.yale.edu/neuron/static/docs/help/neuron/general/classes/vector/vect.html#indgen)
+    // gives a "Manhattan" style plot
+    
+    // Create an index vector with 0,0, 1,1, 2,2, 3,3, ...
+    $o3 = new Vector(2*hist.size())     
+    $o3.indgen(.5) 
+    $o3.apply("int") 
+    
+    // Create a vector of data that corresponds to the indices
+    $o4 = new Vector(1) 
+    $o4.index(hist, $o3) 
+    $o4.rotate(-1)            // so different y's within each pair
+    $o4.x[0] = 0 
+    
+    // Scale $o3 according to the chosen interval
+    $o3.mul(interval)
+    
+    // Do the plotting of the histogram
+    $o4.plot(g, $o3, 1, 2)
+    g.flush
+}
+
+// Redefine the standard run function so that it plots the histogram
+proc run() {
+	running_ = 1
+	stdinit()
+	continuerun(tstop)
+  
+  // Compute ISI
+  isi = compute_isi()
+  
+  // Plot histogram
+  plot_hist(isi, g, hx, hy)
+  
+  // Report CV
+  print "CV = ", compute_cv()
+}
+
