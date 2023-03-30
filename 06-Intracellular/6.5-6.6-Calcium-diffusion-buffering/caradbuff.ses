@@ -1,0 +1,74 @@
+{load_file("nrngui.hoc")}
+objectvar save_window_, rvp_
+objectvar scene_vector_[4]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+{pwman_place(0,0,0)}
+{
+xpanel("Buffering parameters", 0)
+DST = 0.1
+xvalue("Submembrane shell (um)","DST", 0,"", 0, 0 )
+DCa = 2.3
+xvalue("Free calcium diffusion (10^-6 cm^2/sec)","DCa", 0,"", 0, 0 )
+DBuff = 0
+xvalue("Mobile buffer diffusion (10^-6 cm^2/sec)","DBuff", 0,"", 0, 0 )
+Bk1 = 1.5
+xvalue("Buffer forward rate k+ (/uM-s)","Bk1", 0,"", 0, 0 )
+Bk2 = 0.3
+xvalue("Buffer backward rate k- (/s)","Bk2", 0,"", 0, 0 )
+Btot = 50
+xvalue("Total buffer (uM)","Btot", 0,"", 0, 0 )
+xbutton("Update buffer","set_buffers()")
+Bkappa = 250
+xvalue("EBA kappa","Bkappa", 0,"", 0, 0 )
+xpanel(2,556)
+}
+{
+xpanel("RunControl", 0)
+v_init = -65
+xvalue("Init","v_init", 1,"stdinit()", 1, 1 )
+xbutton("Init & Run","run()")
+xbutton("Stop","stoprun=1")
+runStopAt = 5
+xvalue("Continue til","runStopAt", 1,"{continuerun(runStopAt) stoprun=1}", 1, 1 )
+runStopIn = 1
+xvalue("Continue for","runStopIn", 1,"{continuerun(t + runStopIn) stoprun=1}", 1, 1 )
+xbutton("Single Step","steprun()")
+t = 100
+xvalue("t","t", 2 )
+tstop = 100
+xvalue("Tstop","tstop", 1,"tstop_changed()", 0, 1 )
+dt = 0.025
+xvalue("dt","dt", 1,"setdt()", 0, 1 )
+steps_per_ms = 40
+xvalue("Points plotted/ms","steps_per_ms", 1,"setdt()", 0, 1 )
+screen_update_invl = 0.05
+xvalue("Scrn update invl","screen_update_invl", 1,"", 0, 1 )
+realtime = 0.03
+xvalue("Real Time","realtime", 0,"", 0, 1 )
+xpanel(0,120)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,110,4e-05,0.00059)
+scene_vector_[2] = save_window_
+{save_window_.view(0, 4e-05, 110, 0.00055, 385, 144, 496.8, 200.8)}
+graphList[2].append(save_window_)
+save_window_.save_name("graphList[2].")
+save_window_.addexpr("dendFull.cai( 0.5 )", 1, 1, 0.8, 0.9, 2)
+save_window_.addvar("dendEBA.cai( 0.5 )", 3, 1, 0.8, 0.9, 2)
+save_window_.addexpr("dendRBA.cai( 0.5 )", 2, 1, 0.8, 0.9, 2)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,110,4e-05,0.00029)
+scene_vector_[3] = save_window_
+{save_window_.view(0, 4e-05, 110, 0.00025, 384, 486, 497.7, 200.8)}
+graphList[2].append(save_window_)
+save_window_.save_name("graphList[2].")
+save_window_.addexpr("dendFull.ca_cadif4[3]( 0.5 )", 1, 1, 0.8, 0.9, 2)
+save_window_.addexpr("dendEBA.ca_cadifeb4[3]( 0.5 )", 3, 1, 0.8, 0.9, 2)
+save_window_.addexpr("dendRBA.ca_cadifrb4[3]( 0.5 )", 2, 1, 0.8, 0.9, 2)
+}
+objectvar scene_vector_[1]
+{doNotify()}

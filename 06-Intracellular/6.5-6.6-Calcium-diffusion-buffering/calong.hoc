@@ -1,0 +1,157 @@
+/* Radial and longitudinal diffusion of calcium along a dendritic segment.
+
+   Bruce Graham, University of Stirling <bruce.graham@stir.ac.uk>
+   Date: 5-2-07; 14-2-23
+*/
+
+load_file("nrngui.hoc")
+
+create spine, dend
+access spine
+
+Cai0 = 5e-5	// initial conc. (mM = 50nM)
+
+// Compartment geometry
+DL = 10		// dendrite length (um)
+//DD = 1		// dendrite diameter (um)
+DD = 4
+DST = 0.1	// dendrite submembrane shell (um)
+
+// Passive properties
+Rm = 5000	// ohm-cm2
+Ra = 100	// ohm-cm
+cm = 1		// uF/cm2
+Vrest = -65	// mV
+
+// Square-wave calcium current
+IAMP = -0.0025	// Ca current (mA/cm^2)
+IDEL = 20	// onset delay (msecs)
+IDUR = 2	// duration (msecs)
+//IDUR = 200
+
+// Diffusion
+DCa = 0.23	// Ca diffusion coeff (um^2/msec) (Bormann et al)
+DBuff = 0.1	// buffer diffusion coeff (um^2/msec) (Smith Box 3.1)
+
+// Pump kinetics
+PVmax = 1e-11	// slow pump velocity (mmol/ms-cm2)
+PKd = 0.01	// pump half-maximum (mM)	: Borg-Graham
+
+spine {
+	nseg = 1
+	L = 1			// single 1um^3 compartment
+	diam = DD
+	insert pas
+	g_pas = 1/Rm
+	e_pas = Vrest
+	insert cacur		// artificial step calcium current
+	amp_cacur = IAMP	
+	del_cacur = IDEL
+	dur_cacur = IDUR
+}
+
+dend { 
+	L = DL
+	diam = DD
+	nseg = 10
+	insert pas
+	g_pas = 1/Rm
+	e_pas = Vrest
+	insert cacur		// artificial step calcium current
+	amp_cacur = IAMP	
+	del_cacur = IDEL
+	dur_cacur = IDUR
+}
+
+// 4 shell model (separate instant pump, no buffering)
+forall { insert cadif4
+	insert caJpump
+	Vmax_caJpump = PVmax	// (mmol/ms-cm2)	: (very) slow pump
+	kd_caJpump = PKd	// (mM)		: Borg-Graham
+	DFree_cadif4 = DCa
+	rshell_cadif4 = DST	// (um)	: submembrane shell
+	TotalBuffer_cadif4 = 0 }	
+
+//connect spine(1), dend(0)
+
+// calcium current in first 1um only
+dend.amp_cacur(0:0.09) = IAMP:IAMP
+//dend.del_cacur(0:0.09) = IDEL:IDEL
+//dend.dur_cacur(0:0.09) = IDUR:IDUR
+dend.amp_cacur(0.11:1) = 0:0
+
+xopen("calong.ses")
+
+// record calcium concs
+objref rc1, rc2, rc3, rc4, rc9
+rc1 = new Vector()
+rc1.record(&dend.cai(0.05), dt)
+rc2 = new Vector()
+rc2.record(&dend.cai(0.15), dt)
+rc3 = new Vector()
+rc3.record(&dend.cai(0.25), dt)
+rc4 = new Vector()
+rc4.record(&dend.cai(0.45), dt)
+rc9 = new Vector()
+rc9.record(&dend.cai(0.95), dt)
+
+objref rc1c, rc2c, rc3c, rc4c, rc9c
+rc1c = new Vector()
+rc1c.record(&dend.ca_cadif4[3](0.05), dt)
+rc2c = new Vector()
+rc2c.record(&dend.ca_cadif4[3](0.15), dt)
+rc3c = new Vector()
+rc3c.record(&dend.ca_cadif4[3](0.25), dt)
+rc4c = new Vector()
+rc4c.record(&dend.ca_cadif4[3](0.45), dt)
+rc9c = new Vector()
+rc9c.record(&dend.ca_cadif4[3](0.95), dt)
+
+
+objref fc
+
+proc save_ca() {
+
+  fc = new File()
+  fc.wopen("./Results/cai_4ssl_seg1D1.dat")
+  rc1.printf(fc)
+  fc.close()
+  fc = new File()
+  fc.wopen("./Results/cai_4ssl_seg2D1.dat")
+  rc2.printf(fc)
+  fc.close()
+  fc = new File()
+  fc.wopen("./Results/cai_4ssl_seg3D1.dat")
+  rc3.printf(fc)
+  fc.close()
+  fc = new File()
+  fc.wopen("./Results/cai_4ssl_seg5D1.dat")
+  rc4.printf(fc)
+  fc.close()
+  fc = new File()
+  fc.wopen("./Results/cai_4ssl_seg10D1.dat")
+  rc9.printf(fc)
+  fc.close()
+
+  fc = new File()
+  fc.wopen("./Results/cai_4scl_seg1D1.dat")
+  rc1c.printf(fc)
+  fc.close()
+  fc = new File()
+  fc.wopen("./Results/cai_4scl_seg2D1.dat")
+  rc2c.printf(fc)
+  fc.close()
+  fc = new File()
+  fc.wopen("./Results/cai_4scl_seg3D1.dat")
+  rc3c.printf(fc)
+  fc.close()
+  fc = new File()
+  fc.wopen("./Results/cai_4scl_seg5D1.dat")
+  rc4c.printf(fc)
+  fc.close()
+  fc = new File()
+  fc.wopen("./Results/cai_4scl_seg10D1.dat")
+  rc9c.printf(fc)
+  fc.close()
+
+}

@@ -1,0 +1,111 @@
+/* Radial diffusion of calcium in a single compartment (e.g. spine head).
+   Michaelis-Menten instantaneous pump.
+   Tested with a square wave calcium current injection.
+   Fixed (DBuf=0) or mobile buffering.   
+   In all models, the outer shell is 0.1um thick and 4 shells in total diameter of 4um.
+   Fast buffer: k1=500/mM-ms, k2=1/ms
+   Slow buffer: k1=1.5/mM-ms, k2=0.0003/ms
+   High buffer: 50uM (0.05mM), beta=250
+   Low buffer: 5uM (0.005mM), beta=25
+   Buffer parameters to be set via GUI
+   Bruce Graham, University of Stirling <bruce.graham@stir.ac.uk>
+   Date: 6-2-07; 27-1-23
+*/
+
+load_file("nrngui.hoc")
+
+create dendFull, dendEBA, dendRBA
+access dendFull
+
+Cai0 = 5e-5	// initial conc. (mM = 50nM)
+
+// Square-wave calcium current
+IAMP = -0.0025	// Ca current (mA/cm^2)
+IDEL = 20	// onset delay (msecs)
+IDUR = 2	// duration (msecs)
+
+// Diffusion
+DCa = 2.3	// Ca diffusion coeff (10^-6 cm^2/sec) (Bormann et al)
+DBuff = 0	// buffer diffusion coeff (10^-6 cm^2/sec) (Smith Box 3.1)
+//DBuff = 1	// buffer diffusion coeff (10^-6 cm^2/sec) (Smith Box 3.1)
+DST = 0.1	// compartment submembrane shell (um)
+
+// Pump kinetics
+PVmax = 1e-11	// slow pump velocity (mmol/ms-cm2)
+PKd = 0.01	// pump half-maximum (mM)	: Borg-Graham
+
+// Buffer characteristics
+Btot = 50	// total buffer (uM)
+Bk1 = 1.5	// forward binding rate (/mM-ms)
+Bk2 = 0.3	// backward binding rate (/s)
+Bkappa = Btot*Bk1/Bk2	// rapid buffer approximation
+
+// Construct a number of different buffering models
+
+proc set_buffers() {
+
+Bkappa = Btot*Bk1/Bk2	// rapid buffer approximation
+
+forall {
+	nseg = 1
+	L = 1
+	diam = 4
+	insert cacur		// artificial step calcium current
+	amp_cacur = IAMP	
+	del_cacur = IDEL
+	dur_cacur = IDUR
+	insert caJpump
+	Vmax_caJpump = PVmax	// (mmol/ms-cm2)	: (very) slow pump
+	kd_caJpump = PKd	// (mM)		: Borg-Graham
+}	
+
+// full kinetic buffering
+dendFull {
+	insert cadif4
+	DFree_cadif4 = DCa/10	// (um^2/msec)
+	DBuf_cadif4 = DBuff/10	// (um^2/msec)
+	rshell_cadif4 = DST	// (um)	: submembrane shell
+	TotalBuffer_cadif4 = Btot/1000	// (mM) 
+	k1buf_cadif4 = Bk1	// (/mM-ms)
+	k2buf_cadif4 = Bk2/1000	// (/ms)
+}	
+
+// excess buffer approximation
+dendEBA {
+	insert cadifeb4
+	DFree_cadifeb4 = DCa/10
+	rshell_cadifeb4 = DST	// (um)	: submembrane shell
+	TotalBuffer_cadifeb4 = Btot/1000 
+	k1buf_cadifeb4 = Bk1	// (/mM-ms)
+	k2buf_cadifeb4 = Bk2/1000	// (/ms)
+}	
+
+// rapid buffer approximation
+dendRBA {
+	insert cadifrb4
+	DFree_cadifrb4 = DCa/10
+	rshell_cadifrb4 = DST	// (um)	: submembrane shell
+	beta_cadifrb4 = Bkappa 
+}
+
+}
+	
+
+// GUI
+proc buffer_pars() {
+  xpanel("Buffering parameters")
+  xvalue("Submembrane shell (um)", "DST")
+  xvalue("Free calcium diffusion (10^-6 cm^2/sec)", "DCa")
+  xvalue("Mobile buffer diffusion (10^-6 cm^2/sec)", "DBuff")
+  xvalue("Buffer forward rate k+ (/uM-s)", "Bk1")
+  xvalue("Buffer backward rate k- (/s)", "Bk2")
+  xvalue("Total buffer (uM)", "Btot")
+  xbutton("Update buffer", "set_buffers()")
+  xvalue("EBA kappa", "Bkappa")
+  xpanel()
+}
+
+set_buffers()
+//buffer_pars()	
+xopen("caradbuff.ses")
+
