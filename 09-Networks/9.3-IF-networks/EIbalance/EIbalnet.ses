@@ -1,0 +1,111 @@
+objectvar save_window_, rvp_
+objectvar scene_vector_[12]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,1000,-0.5,1.5)
+scene_vector_[2] = save_window_
+{save_window_.view(0, -0.5, 1000, 2, 372, 30, 686.4, 102.4)}
+graphList[0].append(save_window_)
+save_window_.save_name("graphList[0].")
+save_window_.addexpr("ifn[0].M", 1, 1, 0.8, 0.9, 2)
+}
+{WindowMenu[0].ses_gid(1, 0, 1, "All")}
+{WindowMenu[0].ses_gid(0, 0, 1, "All")}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,1000,-0.5,1.5)
+scene_vector_[3] = save_window_
+{save_window_.view(0, -0.5, 1000, 2, 371, 188, 687.36, 108.16)}
+graphList[0].append(save_window_)
+save_window_.save_name("graphList[0].")
+save_window_.addexpr("ifn[1].M", 1, 1, 0.8, 0.9, 2)
+}
+{WindowMenu[0].ses_gid(0, 0, 1, "All")}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,1000,-0.5,1.5)
+scene_vector_[4] = save_window_
+{save_window_.view(0, -0.5, 1000, 2, 371, 354, 688.32, 89.92)}
+graphList[0].append(save_window_)
+save_window_.save_name("graphList[0].")
+save_window_.addexpr("ifn[2].M", 1, 1, 0.8, 0.9, 2)
+}
+{WindowMenu[0].ses_gid(0, 0, 1, "All")}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,1000,-0.5,1.5)
+scene_vector_[5] = save_window_
+{save_window_.view(0, -0.5, 1000, 2, 371, 501, 688.32, 104.32)}
+graphList[0].append(save_window_)
+save_window_.save_name("graphList[0].")
+save_window_.addexpr("ifn[NE].M", 3, 1, 0.8, 0.9, 2)
+}
+{WindowMenu[0].ses_gid(0, 0, 1, "All")}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,1000,0,80)
+scene_vector_[6] = save_window_
+{save_window_.view(0, 0, 1000, 80, 371, 664, 688.32, 241.6)}
+graphList[2].append(save_window_)
+save_window_.save_name("graphList[2].")
+}
+{WindowMenu[0].ses_gid(0, 0, 1, "All")}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,3750,0,103)
+scene_vector_[7] = save_window_
+{save_window_.view(0, 0, 3750, 103, 46, 252, 300.48, 164.8)}
+graphList[2].append(save_window_)
+save_window_.save_name("graphList[2].")
+}
+{WindowMenu[0].ses_gid(0, 0, 1, "All")}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,100,0,0.1)
+scene_vector_[8] = save_window_
+{save_window_.view(0, 0, 100, 0.1, 46, 478, 300.48, 162.88)}
+graphList[2].append(save_window_)
+save_window_.save_name("graphList[2].")
+}
+{WindowMenu[0].ses_gid(0, 0, 1, "All")}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,100,0,0.1)
+scene_vector_[9] = save_window_
+{save_window_.view(0, 0, 100, 0.1, 46, 702, 300.48, 167.68)}
+graphList[2].append(save_window_)
+save_window_.save_name("graphList[2].")
+}
+{WindowMenu[0].ses_gid(0, 0, 1, "All")}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,1100,0,350)
+scene_vector_[10] = save_window_
+{save_window_.view(0, 0, 1100, 350, 371, 970, 688.32, 136.96)}
+graphList[2].append(save_window_)
+save_window_.save_name("graphList[2].")
+}
+{WindowMenu[0].ses_gid(0, 0, 1, "All")}
+{
+xpanel("Control panel", 0)
+tstop = 1000
+xvalue("tstop","tstop", 0,"", 0, 0 )
+scale = 0.5
+xvalue("scale","scale", 0,"", 0, 0 )
+xbutton("Run","myrun()")
+xpanel(49,110)
+}
+{WindowMenu[0].ses_gid(0, 0, 1, "All")}
+{
+save_window_ = new Graph(0)
+save_window_.size(-50,50,0,5)
+scene_vector_[11] = save_window_
+{save_window_.view(-50, 0, 100, 5, 46, 931, 300.48, 174.4)}
+graphList[2].append(save_window_)
+save_window_.save_name("graphList[2].")
+}
+{WindowMenu[0].ses_gid(0, 0, 1, "All")}
+objectvar scene_vector_[1]
+{doNotify()}

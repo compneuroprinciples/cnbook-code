@@ -1,0 +1,330 @@
+// Simulation of recurrent network of excitatory and inhibitory
+// neurons following Amit & Brunel (1997)
+// 
+// This code reproduces Figure 9.8 in "Principles of Computational
+// Modelling in Neuroscience" by Sterratt, Graham, Gillies and
+// Willshaw.
+// 
+// Please report any problems to David Sterratt <david.c.sterratt@ed.ac.uk>
+
+load_file("nrngui.hoc")
+
+// We have to create a dummy section for the IF neuron to sit on
+create dummy
+access dummy 
+
+// scale = 1 for the simulation shown in the book
+scale = 0.5
+
+// Neuron parameters
+theta = 20                              // Threshold
+Vr = 10                               // Reset voltage NOT IMPLEMENTED
+tau0 = 2                                // Refractory period
+tauE = 10                              // Excitatory neuron time const
+tauI = 5                               // Inhibitory neuron time const
+
+// Network parameters
+NE = 6000*scale                         // # excitatory neurons
+NI = 1500*scale                         // # inbitory neurons
+c = 0.2/scale                           // Level of connectivity
+JEE =  0.21/theta
+JEI = -0.63/theta
+JIE =  0.35/theta
+JII = -1.05/theta
+Delta = 0.1            // Relative width of distribution of efficacies
+taud = 1                                // Delay
+sd   = 0.5                              // Variability of delay - delay drawn uniformly from interval [taud-sd, taud+sd]
+
+// Input parameters
+nuE = 13E-3                  // Expected excitatory firing rate in kHz
+
+// Recording parameters
+NEdisp = 60                 // Number of excitatory neurons to display
+NIdisp = 15                 // Number of inhibitory neurons to display
+
+Mrefrac_IntFire6 = 0                    // Display value of refractory state
+
+// create_network() 
+// Procedure to create the network, scaled according to the scale parameter
+objref ifn[1], ns[1], ifn_ns_nc[1]
+objref rec, recs, nil, timevec, idvec 
+objref nclist, r
+
+proc create_network() {
+    NE = 6000*scale                         // # excitatory neurons
+    NI = 1500*scale                         // # inbitory neurons
+    c = 0.2/scale                           // Level of connectivity
+    
+    // Create the neurons, stimulation sources and recordings
+    print ""
+    print "Creating neurons..."
+    N = NE+NI
+    objref ifn[N], ns[N], ifn_ns_nc[N]
+    
+    // See https://www.neuron.yale.edu/phpBB2/viewtopic.php?t=785
+    // for spike raster code
+    timevec = new Vector()
+    idvec   = new Vector()
+    recs    = new List()
+    for i=0, N-1 {
+        printf("\b\b\b\b\b\b\b\b\b\b\b%5g/%5g", i+1, N)
+        // Neurons
+        ifn[i] = new IntFire6(0.5)
+        ifn[i].refrac = tau0
+        ifn[i].mreset = Vr/theta
+        if (i<NE) {
+            ifn[i].tau = tauE
+        } else {
+            ifn[i].tau = tauI
+        }
+        
+        // External random input
+        ns[i] = new NetStim(0.5)
+        ns[i].noise = 1
+        ns[i].number = 1E6
+        ns[i].start = 0
+        ns[i].interval = 1/(c * NE * nuE)
+        if (i<NE) {
+            ifn_ns_nc[i] = new NetCon(ns[i], ifn[i], 0, 0, JEE)
+        } else {
+            ifn_ns_nc[i] = new NetCon(ns[i], ifn[i], 0, 0, JIE)
+        }
+        
+        // Record spike times from excitatory and inhibitory neurons
+        rec = new NetCon(ifn[i], nil)
+        rec.record(timevec, idvec, recs.count()+1)
+        recs.append(rec)
+    }
+    
+    // Create the synapses
+    r = new Random()
+    objref nclist
+    nclist = new List()
+    // Connetions onto excitatory cells
+    print ""
+    print "Creating connections onto excitatory cells..."
+    for i=0, NE-1 {
+        printf("\b\b\b\b\b\b\b\b\b\b\b%5g/%5g", i+1, NE)
+        for j=0, NE-1 {
+            if (r.uniform(0, 1)<c) {
+                nclist.append(new NetCon(ifn[j], ifn[i], 0, r.uniform(taud-sd, taud+sd), r.normal(JEE, (JEE*Delta)^2)))
+            }
+        }
+        for j=NE, N-1 {
+            if (r.uniform(0, 1)<c) {
+                nclist.append(new NetCon(ifn[j], ifn[i], 0, r.uniform(taud-sd, taud+sd), r.normal(JEI, (JEI*Delta)^2)))
+            }
+        }
+    }
+    print ""
+    print "Creating connections onto inhibitory cells..."
+    for i=NE, N-1 {
+        printf("\b\b\b\b\b\b\b\b\b\b\b%5g/%5g", i+1-NE, NI)
+        for j=0, NE-1 {
+            if (r.uniform(0, 1)<c) {
+                nclist.append(new NetCon(ifn[j], ifn[i], 0, r.uniform(taud-sd, taud+sd), r.normal(JIE, (JIE*Delta)^2)))
+            }
+        }
+        for j=NE, N-1 {
+            if (r.uniform(0, 1)<c) {
+                nclist.append(new NetCon(ifn[j], ifn[i], 0, r.uniform(taud-sd, taud+sd), r.normal(JII, (JII*Delta)^2)))
+            }
+        }
+    }
+    print ""
+}
+
+// Load the sesion file to create graphs
+load_file("EIbalnet.ses")
+
+//
+// plotraster() and associated variables
+// Plot a raster of spikes from E and I neurons
+//
+
+objref g, spikeglyph, boxglyph
+// Glyph to make the line of a spike
+spikeglyph = new Glyph()
+spikeglyph = spikeglyph.path()
+spikeglyph = spikeglyph.m(0,0)
+spikeglyph = spikeglyph.l(0,0.9)
+spikeglyph = spikeglyph.s(1,1)
+
+// Glyphy to draw the box behind the inbibitory spikes
+boxglyph = new Glyph()
+boxglyph = boxglyph.path()
+boxglyph = boxglyph.m(0,0)
+boxglyph = boxglyph.l(tstop,0)
+boxglyph = boxglyph.l(tstop,NIdisp)
+boxglyph = boxglyph.l(0,    NIdisp)
+boxglyph = boxglyph.close()
+boxglyph = boxglyph.fill(8)
+
+g = Graph[4]
+g.size(0,1000,0,80)
+
+proc plotraster() {
+    g.erase_all()
+    g.glyph(boxglyph, 0, NEdisp+1)
+    
+    // Go through all recorded spikes
+    for i=0, idvec.size()-1 {
+        // If they are within the first NEdisp of the E spikes, plot
+        if (idvec.x(i) < NEdisp) {
+            g.glyph(spikeglyph, timevec.x(i), idvec.x(i))
+        }
+        // If they are within the first NIdisp of the I spikes, plot
+        if ((idvec.x(i) >= NE) && (idvec.x(i) < (NE + NIdisp))) {
+            g.glyph(spikeglyph, timevec.x(i), idvec.x(i) - NE + NEdisp)
+        }
+    }
+}
+
+//
+// plot_rate_hist() and associated variables
+// Plot a histogram of the firing rates of the excitatory and inhibitory 
+// cells in the network
+// 
+
+objref rates, g_rates
+objref ind
+objref ex_rates, ex_rate_hist, g_ex_rate_hist
+objref in_rates, in_rate_hist, g_in_rate_hist
+
+g_rates        = Graph[5]
+g_ex_rate_hist = Graph[6]
+g_ex_rate_hist.size(0, 100, 0, 0.1)
+g_in_rate_hist = Graph[7]
+g_in_rate_hist.size(0, 100, 0, 0.1)
+
+proc plot_rate_hist() {
+    rates = idvec.histogram(0, N-1, 1)
+    rates.div(tstop/1000)
+    
+    rates.label("Firing rates")
+    rates.plot(g_rates)
+    g_rates.size(0, N, 0, rates.max())
+    
+    ind = new Vector()
+    ind.indgen(0, NE - 1, 1)
+    ex_rates = rates.ind(ind)
+    ind.indgen(NE, N - 1, 1)
+    in_rates = rates.ind(ind)
+    ex_rate_hist = ex_rates.histogram(0, ex_rates.max(), 1)
+    ex_rate_hist.div(ex_rate_hist.sum())
+    in_rate_hist = in_rates.histogram(0, in_rates.max(), 1)
+    in_rate_hist.div(in_rate_hist.sum())
+    
+    ex_rate_hist.label("E rate hist")
+    ex_rate_hist.plot(g_ex_rate_hist, 1, 1)
+    
+    in_rate_hist.label("I rate hist")
+    in_rate_hist.plot(g_in_rate_hist, 3, 1)
+}
+
+//
+// get_pop_rate(ind, rate) and associated variables
+// Get the population firing rates of the cells in the network
+// indexed by ind
+// 
+
+objref ind, dind, times, pop_rate
+
+proc get_pop_rate() {
+    ind = $o1
+    
+    dind = new Vector(ind.size())
+    dind.indgen(0, ind.size()-1, 1)
+    times = new Vector(ind.size())
+    times.copy(timevec, ind, dind)
+    pop_rate = times.histogram(0, tstop, 1)
+    $o2 = pop_rate
+}
+
+//
+// plot_pop_rate() and associated variables
+// Plot the population firing rates of the excitatory and inhibitory 
+// cells in the network
+// 
+
+objref ex_pop_rate, in_pop_rate, g_pop_rate
+objref ex_times, in_times
+
+g_pop_rate = Graph[8]
+g_pop_rate.size(0, 1000, 0, 120)
+
+proc plot_pop_rate() {
+    ind = idvec.c.indvwhere(idvec, "<", NE)
+    get_pop_rate(ind, ex_pop_rate)
+    // Scale rate to be rate of average neuron in Hz
+    ex_pop_rate.mul(1000/NE)
+    ex_pop_rate.label("E pop. rate")
+    ex_pop_rate.plot(g_pop_rate, 1, 1)
+    
+    ind = idvec.c.indvwhere(idvec, ">=", NE)
+    get_pop_rate(ind, in_pop_rate)
+    // Scale rate to be rate of average neuron in Hz
+    in_pop_rate.mul(1000/NI)
+    in_pop_rate.label("I pop. rate")
+    in_pop_rate.plot(g_pop_rate, 3, 1)
+}
+
+//
+// plot_cc() and associated variables
+// Plot the autocorrelation of the excitatory 
+// cells in the network
+// 
+
+objref cc_EE, cc_EE_raw, g_cc, ind, tau, Tmtau
+
+g_cc = Graph[9]
+g_cc.size(-50, 50, 0, 5)
+
+proc plot_cc() {
+    ind = idvec.c.indvwhere(idvec, "<", NE)
+    get_pop_rate(ind, ex_pop_rate)
+    
+    cc_EE_raw = new Vector()
+    cc_EE_raw.correl(ex_pop_rate)
+    
+        
+    // Reorganise so that the CC is symmetrical
+    Tmtau = new Vector()
+    tau = new Vector(50)
+    tau.indgen(1, 1)
+    tau.reverse()
+    
+    cc_EE = cc_EE_raw.ind(tau)
+    Tmtau = tau.c
+    cc_EE.append(cc_EE_raw.x(0))
+    Tmtau.append(0)
+    tau.indgen(1, 1)
+    cc_EE.append(cc_EE_raw.ind(tau))
+    Tmtau.append(tau)
+    
+    Tmtau.mul(-1)
+    Tmtau.add(tstop)
+    cc_EE.div(Tmtau)
+    
+    cc_EE.div((ex_pop_rate.sum()/tstop)^2)
+    tau.indgen(-50, 50, 1)    
+    
+    cc_EE.label("EE autocorrelation")    
+    cc_EE.plot(g_cc, tau)
+
+}
+
+//
+// myrun()
+// Create a network, let it run, and then plot statisitics from it
+//
+
+proc myrun() {
+    create_network()
+    run()
+    plotraster()
+    plot_rate_hist()
+    plot_pop_rate()
+    plot_cc()
+}
+
