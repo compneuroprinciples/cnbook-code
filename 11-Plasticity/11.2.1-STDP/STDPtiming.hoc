@@ -1,0 +1,100 @@
+/* STDP effect on spike times
+    - single compartment spiking cell driven by sequence of inputs
+    - each input fires a single spike in turn after a short delay
+    - first spike time of output cell progresses to earlier times due to STDP
+    - based on Gerstner example (REF)
+    
+  Author: B. Graham, Computing Science & Maths, University of Stirling, U.K.
+  URL: www.cs.stir.ac.uk/~bpg/  Email: b.graham@cs.stir.ac.uk
+  
+  Last update: BPG 16-5-13
+*/
+
+load_file("nrngui.hoc")
+load_file("simpcell.hoc")
+
+Nin=10	// number of inputs
+Iint = 30	// interspike interval (msecs)
+Tdel=1	// delay (offset) between inputs (msecs)
+Wgt=0.012	// base connection weight
+LTPfac=10	// maximum weight scaling (multiplier)
+LTDfac = 10	// minimum weight scaling (divisor)
+Sdec=0.2	// synaptic decay time (msecs)
+Pfac=0.05	// STDP potentiation factor
+Dfac=0		// STDP depression factor
+
+objref cell, input[Nin], syn[Nin], conn[Nin]
+
+cell = new SimpCell()
+access cell.soma
+
+for i=0,Nin-1 {
+
+  input[i] = new NetStim(0.5)
+  input[i].interval = Iint
+  input[i].start = Tdel*(1+i) + 10
+  input[i].number = 100
+  input[i].noise = 0
+  
+  //syn[i] = new ExpSynSTDP(0.5)
+  syn[i] = new STDPB(0.5)
+  syn[i].tau = Sdec
+  syn[i].p = Pfac
+  syn[i].d = Dfac
+  syn[i].wLTP = Wgt*LTPfac
+  syn[i].wLTD = Wgt/LTDfac
+  
+  conn[i] = new NetCon(input[i], syn[i])
+  conn[i].weight = Wgt
+
+}
+
+
+proc set_params() {local i
+
+  for i=0,Nin-1 {
+    input[i].start = Tdel*(1+i)
+    conn[i].weight = Wgt
+    input[i].interval = Iint
+    syn[i].tau = Sdec
+    syn[i].p = Pfac
+    syn[i].d = Dfac
+    syn[i].wLTP = Wgt*LTPfac
+    syn[i].wLTD = Wgt/LTDfac
+  }
+  
+}
+
+objref vwgts, gwgts
+vwgts = new Vector(Nin)
+gwgts = new Graph()
+
+proc plot_weights() {local i
+
+  for i=0,Nin-1 {
+    vwgts.x[i] = syn[i].wgt
+    print vwgts.x[i]
+  }
+  
+  gwgts.size(0, Nin-1, vwgts.min(), vwgts.max())
+  vwgts.plot(gwgts)
+  gwgts.flush()
+
+}
+
+proc set_STDP() {
+xpanel("STDP parameters")
+xvalue("Input weight", "Wgt", 1, "set_params()")
+xvalue("Max weight multiplier", "LTPfac", 1, "set_params()")
+xvalue("Min weight divisor", "LTDfac", 1, "set_params()")
+//xvalue("Input delay", "Tdel", 1, "set_params()")
+//xvalue("Input interval", "Iint", 1, "set_params()")
+//xvalue("Synaptic decay", "Sdec", 1, "set_params()")
+xvalue("Potentiation rate", "Pfac", 1, "set_params()")
+xvalue("Depression rate", "Dfac", 1, "set_params()")
+xbutton("Plot weights", "plot_weights()")
+xpanel()
+}
+
+//set_STDP()
+xopen("STDPtiming.ses")

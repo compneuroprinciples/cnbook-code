@@ -1,0 +1,394 @@
+/* Autoassociative recall network
+
+ Based on Sommers & Wennekers, Neural Networks 2000
+ Uses biophysical cells (Pinsky_Rinzel)
+ Pseudo inhibition provided by principal cells.
+
+This code reproduces Figure 9.10 in "Principles of Computational
+Modelling in Neuroscience" by Sterratt, Graham, Gillies and Willshaw.
+
+B. Graham, Computing Science & Maths, University of Stirling
+(Contact: b.graham@cs.stir.ac.uk)
+Last update: 1-7-2011
+*/
+
+{load_file("nrngui.hoc")}  // load the GUI and standard run libraries
+
+create soma
+access soma
+
+SIMDUR = 500	// simulation duration (msecs)
+
+//////////////////////////////////
+// Step 1: Define the cell classes
+//////////////////////////////////
+
+{load_file("pinrin.hoc")}
+{load_file("ranstream.hoc")}  // to give each cell its own sequence generator
+
+//////////////////////////////////////////////////////////////
+// Steps 2 and 3 are to create the cells and connect the cells
+//////////////////////////////////////////////////////////////
+
+NCELL = 100  // total number of cells in the network
+C_P = 1  // probability of excitatory connections received by each cell
+         // 1 gives full connectivity
+NPATT = 50	// number of stored patterns
+SPATT = 10	// number of active cells per pattern
+
+strdef FCONN, FPATT	// file name of connection weights and patterns
+FCONN = "wgtsN100S10P50.dat"
+FPATT = "pattsN100S10P50.dat"
+
+ESYN = 0	// index of excitatory synapse
+EWGT = 0.006	// excitatory weights (PR; 50 patterns)
+EDEL = 2	// delay (msecs)
+
+//ISYN = 1	// index of inhibitory synapse
+ISYN = 2	// index of inhibitory synapse (soma for PR)
+IWGT = 0.002	// inhibitory weights (PR)
+IDEL = 2	// delay (PR)
+
+CPATT = 1	// index of cue pattern
+//CFRAC = 1	// fraction of active cells in cue
+CFRAC = 0.3	// fraction of active cells in cue
+CNUM = 1000	// number of cue spikes
+CSTART = 10	// time of first cue spike
+CINT = 2	// cue spike ISI
+CNOISE = 1	// Poissonian
+CWGT = 0.0015	// cue weight
+CAMP = 0.005	// cue injection current amplitude (PR)
+
+
+connect_random_low_start_ = 1  // low seed for mcell_ran4_init()
+
+objref cells, nclist, nilist, cuelist, stimlist  // will be Lists that hold all network cell
+    // and NetCon instances, respectively
+objref ranlist  // for RandomStreams, one per cell
+
+proc mknet() {
+  mkcells($1)  // create the cells
+  connectcells($s2, $3)  // connect them together
+  connectinhib()	// add inhibition
+}
+
+
+// creates the cells and appends them to a List called cells
+// argument is the number of cells to be created
+proc mkcells() {local i,j  localobj cell
+  cells = new List()
+  ranlist = new List()
+  print "Number of cells ", $1
+  for i=0, $1-1 {
+    cell = new rinzelnrn()
+    cell.icl.dur = SIMDUR
+    cell.icl.amp = -0.0012	// ngte holding current
+    cells.append(cell)
+    ranlist.append(new RandomStream(i))
+  }
+}
+
+
+// connects the cells
+// read connections from a file, with connections to
+// a target being a column with index i for target cell i
+// appends the NetCons to a List called nclist
+proc connectcells() {local i, j, nsyn, pc  localobj src, syn, nc, fc, rs, conns, rc
+  pc = $2	// connection probability
+  mcell_ran4_init(connect_random_low_start_)
+  conns = new Vector(NCELL)  // connection weights
+  rc = new Vector(NCELL)  // random physical connectivity
+  nclist = new List()
+  for i=0, cells.count-1 {
+    print "cell ", i
+    if (cells.object(i).is_art()) {
+      // target is I&F point process
+      syn = cells.object(i).pp
+    } else {
+      // target synapse is synlist.object(0) on cells.object(i)
+      syn = cells.object(i).synlist.object(ESYN)
+    }
+    rs = ranlist.object(i)  // the corresponding RandomStream
+    rs.start()
+    rs.r.uniform(0, 1)  // return integer in range 0..1
+    rc.setrand(rs.r)	// generate random connectivity
+    nsyn = 0
+    // open connections file
+    fc = new File($s1)
+    fc.ropen()
+    conns.scanf(fc, i+1, NCELL)	// read incoming weights for cell i
+//    conns.printf()
+    fc.close()
+    for j=0, cells.count-1 {
+      // no self-connection, and only one connection from any source
+      if (j != i) if (conns.x[j] == 1 && rc.x[j] <= pc) {
+        print "   src ", j
+        src = cells.object(j)
+        // set up connection from source to target
+        nc = src.connect2target(syn)
+        nclist.append(nc)
+        nc.delay = EDEL
+        nc.weight = EWGT
+        nsyn += 1
+      }
+    }
+  }
+}
+
+
+// connects the cells with inhibitory connections
+// appends the NetCons to a List called nilist
+proc connectinhib() {local i, j, nsyn localobj src, syn, nc
+  nilist = new List()
+  for i=0, cells.count-1 {
+    if (cells.object(i).is_art()) {
+      // target is I&F point process
+      syn = cells.object(i).pp
+    } else {
+      // target synapse is synlist.object(1) on cells.object(i)
+      syn = cells.object(i).synlist.object(ISYN)
+    }
+    nsyn = 0
+    for j=0, cells.count-1 {
+      // all-to-all connectivity
+      // set up connection from source to target
+      src = cells.object(j)
+      nc = src.connect2target(syn)
+      nilist.append(nc)
+      nc.delay = IDEL
+      nc.weight = IWGT
+      nsyn += 1
+    }
+  }
+}
+
+
+// adjust excitatory weights and delays
+proc setexcit() {local i
+  for i=0, nclist.count-1 {
+    nclist.object(i).weight = $1
+    nclist.object(i).delay = $2
+  }
+}
+
+// adjust inhibitory weights and delays
+proc setinhib() {local i
+  for i=0, nilist.count-1 {
+    nilist.object(i).weight = $1
+    nilist.object(i).delay = $2
+  }
+}
+
+proc xmenucontrol() {
+  xpanel("Control")
+  xlabel("Connections")
+  xvalue("Excit weight", "EWGT", 1, "setexcit(EWGT, EDEL)")
+  xvalue("Excit delay", "EDEL", 1, "setexcit(EWGT, EDEL)")
+  xvalue("Inhib weight", "IWGT", 1, "setinhib(IWGT, IDEL)")
+  xvalue("Inhib delay", "IDEL", 1, "setinhib(IWGT, IDEL)")
+  xlabel("Plots")
+  xbutton("Spike plot", "spikeplot()")
+  xpanel()
+}
+
+
+
+mknet(NCELL, FCONN, C_P)  // go ahead and create the net!
+
+
+//////////////////////////////////////////////////
+// Instrumentation, i.e. stimulation and recording
+//////////////////////////////////////////////////
+
+// stim will be an artificial spiking cell that generates a "spike" event
+// that is delivered to the first cell in the net by ncstim
+// in order to initiate network spiking.
+// We won't bother including this "external stimulus source" or its NetCon
+// in the network's lists of cells or NetCons.
+objref stim, ncstim
+proc mkstim() {
+  stim = new NetStim()
+  stim.number = CNUM
+  stim.start = CSTART
+  stim.interval = CINT
+  if (cells.object(0).is_art()) {
+    ncstim = new NetCon(cstim, cells.object(0).pp)
+  } else {
+    ncstim = new NetCon(cstim, cells.object(0).synlist.object(0))
+  }
+  ncstim.delay = 0
+  ncstim.weight = CWGT
+}
+
+// alternative current injection stimulus
+// NOTE: cannot be used with I&F cells
+objref istim
+proc mkstimcurr() {
+  if (cells.object(0).is_art()) {
+    istim = new IClamp(0.5)	// attach to dummy soma, so does nothing!
+  } else {
+    cells.object(0).soma istim = new IClamp(0.5)
+  }
+  istim.del = 0
+  istim.dur = SIMDUR
+  istim.amp = CAMP
+}
+
+// cstim will be an artificial spiking cell that generates a "spike" event
+// that is delivered to the active cells in a cue pattern by ncstim
+// in order to initiate network spiking.
+objref cstim, nccue, cue, fp
+proc mkcue() {local i, ncue
+  stimlist = new List()
+  cuelist = new List()
+  // open patterns file
+  fp = new File($s1)
+  fp.ropen()
+  cue = new Vector(NCELL)
+  cue.scanf(fp, $2, NPATT)	// read pattern
+  print "cue size ", cue.size()
+//  cue.printf()
+  fp.close()
+  ncue = 0
+  // find active cells in pattern
+  for i=0, cue.size()-1 {
+    if (ncue <= SPATT*$3) { 	// fraction of active cells in cue
+      if (cue.x[i] == 1) {
+        ncue += 1
+        print "Cue cell ", i
+        // create stimulus
+        cstim = new NetStim()
+        cstim.number = CNUM
+        cstim.start = CSTART
+        cstim.interval = CINT
+        cstim.noise = CNOISE
+        stimlist.append(cstim)
+        if (cells.object(i).is_art()) {
+          nccue = new NetCon(cstim, cells.object(i).pp)
+        } else {
+          nccue = new NetCon(cstim, cells.object(i).synlist.object(0))
+        }
+        nccue.delay = 0
+        nccue.weight = CWGT
+        cuelist.append(nccue)
+      }
+    }
+  }
+}
+
+// adjust cue stimulus
+proc setcue() {local i
+  for i=0, cuelist.count-1 {
+    cuelist.object(i).weight = $1
+  }
+}
+
+// current injection to active cells in a cue pattern
+// in order to initiate network spiking.
+// NOTE: cannot be used with I&F cells
+objref cistim, cue, fp
+proc mkcuecurr() {local i, ncue
+  cuelist = new List()
+  // open patterns file
+  fp = new File($s1)
+  fp.ropen()
+  cue = new Vector(NCELL)
+  cue.scanf(fp, $2, NPATT)	// read pattern
+  print "cue size ", cue.size()
+//  cue.printf()
+  fp.close()
+  ncue = 0
+  // find active cells in pattern
+  for i=0, cue.size()-1 {
+    if (ncue <= SPATT*$3) { 	// fraction of active cells in cue
+      if (cue.x[i] == 1) {
+        ncue += 1
+        print "Cue cell ", i
+        if (cells.object(i).is_art()) {
+          cistim = new IClamp(0.5) // attached to dummy soma, so does nothing!!
+        } else {
+          cells.object(i).soma cistim = new IClamp(0.5)
+        }
+        cistim.del = 0
+        cistim.dur = SIMDUR
+        cistim.amp = CAMP
+        cuelist.append(cistim)
+      }
+    }
+  }
+}
+
+// adjust cue stimulus
+proc setcuecurr() {local i
+  for i=0, cuelist.count-1 {
+    cuelist.object(i).amp = $1
+    cuelist.object(i).dur = $2
+  }
+}
+
+//mkstim()
+//mkstimcurr()
+mkcue(FPATT, CPATT, CFRAC)
+//mkcuecurr(FPATT, CPATT, CFRAC)
+
+
+objref tvec, idvec  // will be Vectors that record all spike times (tvec)
+        // and the corresponding id numbers of the cells that spiked (idvec)
+proc spikerecord() {local i  localobj nc, nil
+  tvec = new Vector()
+  idvec = new Vector()
+  for i=0, cells.count-1 {
+    nc = cells.object(i).connect2target(nil)
+    nc.record(tvec, idvec, i)
+    // the Vector will continue to record spike times
+    // even after the NetCon has been destroyed
+  }
+}
+
+spikerecord()
+
+
+/////////////////////
+// Simulation control
+/////////////////////
+
+tstop = SIMDUR
+celsius = 37
+//run()
+
+////////////////////////////
+// Report simulation results
+////////////////////////////
+
+objref fo
+strdef fno
+proc spikeout() { local i
+  sprint(fno,"Results/AAM_test_N%dP%d_spt.dat",NCELL, NPATT)
+  fo = new File(fno)
+  fo.wopen()
+  printf("\ntime\t cell\n")
+  for i=0, tvec.size-1 {
+    printf("%g\t %d\n", tvec.x[i], idvec.x[i])
+    fo.printf("%g\t %d\n", tvec.x[i], idvec.x[i])
+  }
+  fo.close()
+}
+
+// produce raster plot of spiking activity
+objref gs
+proc spikeplot() { local i
+  gs = new Graph()
+  gs.size(0, tstop, -1, NCELL)
+  for i=0, tvec.size-1 {
+    gs.mark(tvec.x[i], idvec.x[i], "|", 8)
+  }
+  gs.flush()
+}
+
+//spikeout()
+//spikeplot()
+
+//quit()
+
+xopen("AssocMem.ses")
+

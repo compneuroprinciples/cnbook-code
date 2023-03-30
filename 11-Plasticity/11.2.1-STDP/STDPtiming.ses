@@ -1,0 +1,63 @@
+{load_file("nrngui.hoc")}
+objectvar save_window_, rvp_
+objectvar scene_vector_[4]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+{pwman_place(0,0,0)}
+{
+save_window_ = new Graph(0)
+save_window_.size(25,275,16.6667,183.333)
+scene_vector_[2] = save_window_
+{save_window_.view(25, 16.6667, 250, 166.667, 304, 532, 300.6, 200.8)}
+}
+{
+xpanel("STDP parameters", 0)
+Wgt = 0.012
+xvalue("Input weight","Wgt", 1,"set_params()", 0, 0 )
+LTPfac = 10
+xvalue("Max weight multiplier","LTPfac", 1,"set_params()", 0, 0 )
+LTDfac = 10
+xvalue("Min weight divisor","LTDfac", 1,"set_params()", 0, 0 )
+Pfac = 0.05
+xvalue("Potentiation rate","Pfac", 1,"set_params()", 0, 0 )
+Dfac = 0
+xvalue("Depression rate","Dfac", 1,"set_params()", 0, 0 )
+xbutton("Plot weights","plot_weights()")
+xpanel(1,556)
+}
+{
+xpanel("RunControl", 0)
+v_init = -65
+xvalue("Init","v_init", 1,"stdinit()", 1, 1 )
+xbutton("Init & Run","run()")
+xbutton("Stop","stoprun=1")
+runStopAt = 5
+xvalue("Continue til","runStopAt", 1,"{continuerun(runStopAt) stoprun=1}", 1, 1 )
+runStopIn = 1
+xvalue("Continue for","runStopIn", 1,"{continuerun(t + runStopIn) stoprun=1}", 1, 1 )
+xbutton("Single Step","steprun()")
+t = 200
+xvalue("t","t", 2 )
+tstop = 200
+xvalue("Tstop","tstop", 1,"tstop_changed()", 0, 1 )
+dt = 0.025
+xvalue("dt","dt", 1,"setdt()", 0, 1 )
+steps_per_ms = 40
+xvalue("Points plotted/ms","steps_per_ms", 1,"setdt()", 0, 1 )
+screen_update_invl = 0.05
+xvalue("Scrn update invl","screen_update_invl", 1,"", 0, 1 )
+realtime = 0.18
+xvalue("Real Time","realtime", 0,"", 0, 1 )
+xpanel(0,117)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,200,-80,40)
+scene_vector_[3] = save_window_
+{save_window_.view(0, -80, 200, 120, 291, 127, 786.6, 249.4)}
+graphList[0].append(save_window_)
+save_window_.save_name("graphList[0].")
+save_window_.addexpr("v(.5)", 1, 1, 0.8, 0.9, 2)
+}
+objectvar scene_vector_[1]
+{doNotify()}

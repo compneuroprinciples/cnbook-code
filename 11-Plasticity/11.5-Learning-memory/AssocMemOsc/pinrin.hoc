@@ -1,0 +1,156 @@
+// Pinsky-Rinzel 2 compartment CA3 PC
+// BPG 2-5-08
+// Inhibitory synapse modified BPG 6-8-09
+
+begintemplate rinzelnrn
+   public soma, dend
+   public synlist, connect2target, is_art
+   public gc, set_gc, icl
+   
+   create soma, dend
+   objectvar synlist, icl
+
+   proc init() {
+     geometry()
+     synlist = new List()
+     synapses()
+     
+     }
+
+//
+// PROCEDURE: geometry
+//      DESC: Calls all necessary procs
+//            to specify parameters of
+//            the given section.
+//
+   proc geometry() {
+      init_topology_0()
+      init_dx_0()
+      init_diam_0()
+      biophys()
+      
+      access soma
+   }
+
+//
+// PROCEDURE: init_topology
+//      DESC: Connections between
+//            all compartments are
+//            specified in this proc.
+//
+   proc init_topology_0() {
+      soma connect dend(0), 1
+   }
+
+//
+// PROCEDURE: init_dx_0
+//      DESC: Lengths of all
+//            compartments are
+//            specified in this proc.
+//
+   proc init_dx_0() { local p
+      p = 0.5 // proportion of area taken up by soma
+      soma.L = p*20/PI
+      dend.L = (1-p)*20/PI
+   }
+
+//
+// PROCEDURE: init_diam_0
+//      DESC: Diameters of all
+//            compartments are
+//            specified in this proc.
+//
+   proc init_diam_0() { 
+      soma.diam = 10
+      dend.diam = 10
+   }
+   
+
+objref all
+proc subsets() { local i
+  objref all
+  all = new SectionList()
+    soma all.append()
+    dend all.append()
+    
+}
+
+//
+// PROCEDURE: set_gc
+//      DESC: The cytoplasmic resistivity Ra is derived from
+//            the value of the coupling conductance gc
+//
+proc set_gc() {
+    gc = $1 // mS/cm2; Ra in ohm-cm
+    pp = 0.5 // proporton of dend to soma size
+    
+    // adjust Ra to get the desired longitudinal resistance
+    l = (soma.L + dend.L)/2
+    d = soma.diam
+    global_Ra = d/(4*gc*l^2)*1e7*pp
+    forall { Ra=global_Ra  cm=3 }
+}
+
+proc biophys() {
+    //* Electrical parameters
+    set_gc(2.1)
+    
+  //* soma
+  gpas=0.1e-3
+  soma {
+        insert pas
+        insert kdr
+        insert nafPR
+    
+        gmax_nafPR=00030e-3
+        gmax_kdr=00015e-3
+        g_pas=gpas
+        e_pas = -60
+	ek=-75
+      }
+    
+  //* dend
+  dend {
+        insert pas
+        insert rcadecay
+        insert cal
+        insert kcRT03
+        insert rkq
+    
+        g_pas=gpas
+        e_pas=-60.
+        phi_rcadecay = 130
+        gmax_cal = 00010e-3
+        erev_cal = 80
+        gmax_kcRT03=00015e-3
+        gmax_rkq=0000.8e-3
+	ek=-75
+      }
+      
+   soma icl = new IClamp(0.5)	// holding current
+  
+}
+
+
+obfunc connect2target() { localobj nc //$o1 target point process, optional $o2 returned NetCon
+  soma nc = new NetCon(&v(1), $o1)
+  nc.threshold = -10
+  if (numarg() == 2) { $o2 = nc } // for backward compatibility
+  return nc
+}
+
+objref syn_
+proc synapses() {
+  /* E0 */   dend syn_ = new ExpSid(0.5)  synlist.append(syn_)
+    syn_.tau = 2
+  /* I1 */   dend syn_ = new ExpSid(0.5)  synlist.append(syn_)
+    syn_.tau = 7
+    syn_.e = -75
+  /* I2 */   soma syn_ = new ExpSid(0.5)  synlist.append(syn_)
+    syn_.tau = 7
+    syn_.e = -75
+}
+
+func is_art() { return 0 }
+
+endtemplate rinzelnrn
