@@ -1,0 +1,99 @@
+% Continuum Model for Neurite Outgrowth
+% Graham, Lauchlan & McLean, J Comput Neurosci (2006) 20:43-60, Figure 4
+% Variations in D, a and g for large, medium and small growth regimes
+%  - length profiles
+% Version 1.0 (BPG & DRM 5-2-05)
+%   1.1 Cut-down version for PCMN figure, Chapt 12 (BPG 21-8-23)
+
+% Parameters
+
+% simulation
+simp.dt = 0.01;                % time step
+simp.tmax = 5000;              % simulation time
+simp.datat = 1000;             % data collection time step
+simp.N = 100;                  % number of spatial points
+simp.kmax = 10000;             % maximum corrector steps
+simp.mc = 0.0001;              % tolerance on C;
+simp.ml = 0.0001;              % tolerance on l;
+
+% user-defined
+modp.c0 = 10;                  % concentration scale
+modp.l0 = 0.01;                % initial (min) length;
+modp.D = 30000;                % diffusion constant
+modp.a = 100;                  % active transport rate
+modp.g = 0.002;                % decay rate
+modp.rg = 10;                  % growth rate constant
+modp.sg = 100;                 % growth rate set point (threshold)
+k1 = 0.5;                      % alpha_twid_h value
+k2 = 0.00001;                  % assembly to concentration scale
+modp.e0 = modp.g*modp.sg/(k1*modp.c0*modp.rg*modp.a);  % soma flux-source rate
+theta = 0;                     % fractional autoregulation
+modp.er = theta*modp.e0;       % soma tubulin autoregulation
+modp.rdt = 0;                  % autoregulation time delay
+modp.el = k2*modp.rg;          % growth cone flux-sink rate
+modp.zl = k2*modp.sg;          % growth cone flux-source rate
+
+% plot parameters
+tfs = 12;   % title font size
+
+
+% Run simulations
+
+% Large growth regime
+k1 = 0.5;                      % alpha_twid_h value
+modp.e0 = modp.g*modp.sg/(k1*modp.c0*modp.rg*modp.a);  % soma flux-source rate
+% Run 1: D=30000, a=100, g=0.002
+% calculated parameters
+[calcp] = CMNG_calcparams(simp, modp);
+% run model for jmax time steps, linear ICs, no retraction
+[Cl, C0l, CNl, ll] = CMNG_run(simp, modp, calcp, -1, modp);
+[t, Cl, C0l, CNl, ll] = CMNG_dimen(simp, modp, Cl, C0l, CNl, ll);  % dimensionalise
+Cal = [C0l Cl CNl];
+
+% Plot results
+subplot(1,3,1);
+plot(t,ll,'k-');
+hold on;
+title('Large','FontSize',tfs);
+xlabel('Time');
+ylabel('Length (\mum)');
+
+
+% Moderate growth regime
+k1 = 1;
+modp.e0 = modp.g*modp.sg/(k1*modp.c0*modp.rg*modp.a);  % soma flux-source rate
+% Run 1: D=30000, a=100, g=0.002
+% calculated parameters
+[calcp] = CMNG_calcparams(simp, modp);
+% run model for jmax time steps, linear ICs, no retraction
+[Cm, C0m, CNm, lm] = CMNG_run(simp, modp, calcp, -1, modp);
+[t, Cm, C0m, CNm, lm] = CMNG_dimen(simp, modp, Cm, C0m, CNm, lm);  % dimensionalise
+
+% Plot results
+subplot(1,3,2);
+plot(t,lm,'k-');
+hold on;
+title('Moderate','FontSize',tfs);
+xlabel('Time');
+%ylabel('Length');
+
+
+% Small growth regime
+simp.tmax = 200;                  % simulation time
+simp.datat = 100;                 % data collection time step
+k1 = 10;
+modp.e0 = modp.g*modp.sg/(k1*modp.c0*modp.rg*modp.a);  % soma flux-source rate
+% Run 1: D=30000, a=100, g=0.002
+% calculated parameters
+[calcp] = CMNG_calcparams(simp, modp);
+% run model for jmax time steps, linear ICs, no retraction
+[Cs, C0s, CNs, ls] = CMNG_run(simp, modp, calcp, -1, modp);
+[t, Cs, C0s, CNs, ls] = CMNG_dimen(simp, modp, Cs, C0s, CNs, ls);  % dimensionalise
+
+% Plot results
+subplot(1,3,3);
+plot(t,ls,'k-');
+hold on;
+title('Small','FontSize',tfs);
+xlabel('Time');
+%ylabel('Length');
