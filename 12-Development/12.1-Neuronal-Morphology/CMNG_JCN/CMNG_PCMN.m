@@ -1,6 +1,6 @@
 % Continuum Model for Neurite Outgrowth
 % Graham, Lauchlan & McLean, J Comput Neurosci (2006) 20:43-60, Figure 4
-% Variations in D, a and g for large, medium and small growth regimes
+% Variations in D, a and g for large, medium and small growth modes
 %  - length profiles
 % Version 1.0 (BPG & DRM 5-2-05)
 %   1.1 Cut-down version for PCMN figure, Chapt 12 (BPG 21-8-23)
@@ -42,7 +42,7 @@ tfs = 12;   % title font size
 modp.D = 30000;                % diffusion constant
 modp.a = 100;                  % active transport rate
 
-% Large growth regime
+% Large growth mode
 modp.e0 = 4.0e-5;  % soma flux-source rate
 % calculated parameters
 [calcp] = CMNG_calcparams(simp, modp);
@@ -60,7 +60,7 @@ xlabel('Time');
 ylabel('Length (\mum)');
 
 
-% Moderate growth regime
+% Moderate growth mode
 modp.e0 = 2.0e-5;  % soma flux-source rate
 % calculated parameters
 [calcp] = CMNG_calcparams(simp, modp);
@@ -77,7 +77,7 @@ xlabel('Time');
 %ylabel('Length');
 
 
-% Small growth regime
+% Small growth mode
 simp.tmax = 200;                  % simulation time
 simp.datat = 100;                 % data collection time step
 modp.e0 = 2.0e-6;  % soma flux-source rate
