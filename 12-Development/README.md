@@ -4,4 +4,4 @@
 
 ### 12.1 Neuronal morphology
 
-Matlab implementation of a continous model of neurite outgrowth
+CMNG_JCN: Matlab implementation of a continuous model of neurite outgrowth
