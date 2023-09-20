@@ -12,7 +12,7 @@ Rebuild NEURON in this folder to add the required diffusion models to the simula
 
 Load caradbuff.hoc into NEURON. A graphical user interface (GUI) will appear.
 
-A ``Buffer parameters'' GUI window will allow you to alter diffusion rates and buffer characteristics. Click ``Update buffer'' each time you change a parameter value to apply your changes.
+A "Buffer parameters" GUI window will allow you to alter diffusion rates and buffer characteristics. Click "Update buffer" each time you change a parameter value to apply your changes.
 
 Running a simulation with the default parameters, which specify a slow buffer, produces results as in PCMN Figure 6.12. The two plot windows show the calcium concentration over time in the submembrane shell (top) and the dendrite core shell (bottom). The full kinetic model is shown by the black traces, with the blue trace showing the Excess Buffer Approximation (EBA) and the red trace showing the Rapid Buffer Approximation (RBA). 
 
