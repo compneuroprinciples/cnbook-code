@@ -8,7 +8,7 @@ NEURON simulations of (un)buffered radial and longitudinal diffusion in dendrite
 
 Rebuild NEURON in this folder to add the required diffusion models to the simulator.
 
-### 1. Calcium intracellular buffered radial diffusion
+#### 1. Calcium intracellular buffered radial diffusion
 
 Load caradbuff.hoc into NEURON. A graphical user interface (GUI) will appear.
 
@@ -16,7 +16,7 @@ A "Buffer parameters" GUI window will allow you to alter diffusion rates and buf
 
 Running a simulation with the default parameters, which specify a slow buffer, produces results as in PCMN Figure 6.12. The two plot windows show the calcium concentration over time in the submembrane shell (top) and the dendrite core shell (bottom). The full kinetic model is shown by the black traces, with the blue trace showing the Excess Buffer Approximation (EBA) and the red trace showing the Rapid Buffer Approximation (RBA). 
 
-### 2. Calcium intracellular longitudinal diffusion
+#### 2. Calcium intracellular longitudinal diffusion
 
 Load calong.hoc into NEURON. A graphical user interface (GUI) will appear.
 
