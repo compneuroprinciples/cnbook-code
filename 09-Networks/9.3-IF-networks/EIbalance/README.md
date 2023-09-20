@@ -4,7 +4,7 @@
 
 ### 9.3 Networks of integrate-and-fire neurons
 
-NEURON simulation of the Amit and Brunel network model of excitatory-inhibitory balance.
+#### NEURON simulation of the Amit and Brunel network model of excitatory-inhibitory balance.
 
 Rebuild NEURON in this folder to add the required neuron models to the simulator.
 
