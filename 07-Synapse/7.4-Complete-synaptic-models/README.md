@@ -8,7 +8,7 @@ NEURON simulations of the postsynaptic response to stochastic vesicle release fr
 
 Rebuild NEURON in this folder to add the required synapse models to the simulator.
 
-### 1. Synaptic responses in a stochastic multiple-release-site model
+#### 1. Synaptic responses in a stochastic multiple-release-site model
 
 Load synstochmulti.hoc into NEURON. A graphical user interface (GUI) will appear.
 
@@ -16,7 +16,7 @@ The "Synapse parameters" GUI window will allow you to alter presynaptic vesicle 
 
 Running a simulation with the default parameters will result in the plot window showing the postsynaptic EPSCs due to a train of presynaptic stimuli delivered at 100 Hz. This should be similar to the examples shown in PCMN Figure 7.12.
 
-### 2. Synaptic responses in a stochastic single-release-site model
+#### 2. Synaptic responses in a stochastic single-release-site model
 
 Load synstochsingle.hoc into NEURON. A graphical user interface (GUI) will appear.
 
