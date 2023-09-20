@@ -20,4 +20,4 @@ Running a simulation with the default parameters, which specify a slow buffer, p
 
 Load calong.hoc into NEURON. A graphical user interface (GUI) will appear.
 
-Running a simulation with the default parameters produces results as in PCMN Figure 6.11b. The three plot windows show the membrane voltage (top) the calcium concentration over time in the submembrane shell (middle) and the dendrite core shell (bottom) at different points along the dendrite, along with the equivalent quantities in a single compartment model (labelled ``spine'').
+Running a simulation with the default parameters produces results as in PCMN Figure 6.11b. The three plot windows show the membrane voltage (top) the calcium concentration over time in the submembrane shell (middle) and the dendrite core shell (bottom) at different points along the dendrite, along with the equivalent quantities in a single compartment model (labelled "spine").
