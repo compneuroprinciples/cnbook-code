@@ -4,7 +4,7 @@
 
 ### 4.4 Gating particle models of ion channels
 
-#### AType-fIcurve
+#### f-I curves of types I and II
 
 NEURON simulation of the effect of the A-type current on the f-I curve of a simple neuron. The code produces the results shown in PCMN figure 4.11.
 
