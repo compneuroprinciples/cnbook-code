@@ -1,0 +1,132 @@
+{load_file("nrngui.hoc")}
+objectvar save_window_, rvp_
+objectvar scene_vector_[3]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+{pwman_place(0,0,0)}
+{
+xpanel("RunControl", 0)
+v_init = -65
+xvalue("Init","v_init", 1,"stdinit()", 1, 1 )
+xbutton("Init & Run","run()")
+xbutton("Stop","stoprun=1")
+runStopAt = 5
+xvalue("Continue til","runStopAt", 1,"{continuerun(runStopAt) stoprun=1}", 1, 1 )
+runStopIn = 1
+xvalue("Continue for","runStopIn", 1,"{continuerun(t + runStopIn) stoprun=1}", 1, 1 )
+xbutton("Single Step","steprun()")
+t = 150
+xvalue("t","t", 2 )
+tstop = 150
+xvalue("Tstop","tstop", 1,"tstop_changed()", 0, 1 )
+dt = 0.025
+xvalue("dt","dt", 1,"setdt()", 0, 1 )
+steps_per_ms = 40
+xvalue("Points plotted/ms","steps_per_ms", 1,"setdt()", 0, 1 )
+screen_update_invl = 0.05
+xvalue("Scrn update invl","screen_update_invl", 1,"", 0, 1 )
+realtime = 0.35
+xvalue("Real Time","realtime", 0,"", 0, 1 )
+xpanel(0,96)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,150,0,0.0011)
+scene_vector_[2] = save_window_
+{save_window_.view(0, 0, 150, 0.0011, 288, 97, 300.6, 200.8)}
+graphList[2].append(save_window_)
+save_window_.save_name("graphList[2].")
+save_window_.addvar("dend1.cai( 0.5 )", 1, 1, 0.8, 0.9, 2)
+save_window_.addvar("dend2.cai( 0.5 )", 2, 1, 0.8, 0.9, 2)
+save_window_.addvar("dend3.cai( 0.5 )", 3, 1, 0.8, 0.9, 2)
+}
+{
+xpanel("cadif1 (Globals)", 0)
+DCa_cadif1 = 0.23
+xvalue("DCa_cadif1","DCa_cadif1", 1,"", 0, 0 )
+k1buf_cadif1 = 100
+xvalue("k1buf_cadif1","k1buf_cadif1", 1,"", 0, 0 )
+k2buf_cadif1 = 0.1
+xvalue("k2buf_cadif1","k2buf_cadif1", 1,"", 0, 0 )
+TotalBuffer_cadif1 = 0
+xvalue("TotalBuffer_cadif1","TotalBuffer_cadif1", 1,"", 0, 0 )
+vol_cadif1[0] = 0.785397
+xvalue("vol_cadif1[0]","vol_cadif1[0]", 0,"", 0, 1 )
+xpanel(18,529)
+}
+{
+xpanel("caJpump (Globals)", 0)
+Vmax_caJpump = 1e-11
+xvalue("Vmax_caJpump","Vmax_caJpump", 1,"", 0, 0 )
+kd_caJpump = 0.01
+xvalue("kd_caJpump","kd_caJpump", 1,"", 0, 0 )
+xpanel(0,762)
+}
+{
+xpanel("dend1(0 - 1) (Parameters)", 0)
+xlabel("dend1(0 - 1) (Parameters)")
+xlabel("nseg = 1")
+dend1.L = 1
+xvalue("L","dend1.L", 1,"define_shape()", 0, 0 )
+dend1.cm = 1
+xvalue("cm","dend1.cm", 1,"", 0, 0 )
+dend1.del_cacur = 20
+xvalue("del_cacur","dend1.del_cacur", 1,"", 0, 0 )
+dend1.dur_cacur = 2
+xvalue("dur_cacur","dend1.dur_cacur", 1,"", 0, 0 )
+dend1.amp_cacur = -0.0025
+xvalue("amp_cacur","dend1.amp_cacur", 1,"", 0, 0 )
+dend1.cai0_cadif1 = 5e-05
+xvalue("cai0_cadif1","dend1.cai0_cadif1", 1,"", 0, 0 )
+dend1.diam = 1
+xvalue("diam","dend1.diam", 1,"", 0, 0 )
+xpanel(366,492)
+}
+{
+xpanel("dend2(0 - 1) (Parameters)", 0)
+xlabel("dend2(0 - 1) (Parameters)")
+xlabel("nseg = 1")
+dend2.L = 1
+xvalue("L","dend2.L", 1,"define_shape()", 0, 0 )
+dend2.diam = 1
+xvalue("diam","dend2.diam", 1,"", 0, 0 )
+dend2.cm = 1
+xvalue("cm","dend2.cm", 1,"", 0, 0 )
+dend2.del_cacur = 20
+xvalue("del_cacur","dend2.del_cacur", 1,"", 0, 0 )
+dend2.dur_cacur = 2
+xvalue("dur_cacur","dend2.dur_cacur", 1,"", 0, 0 )
+dend2.amp_cacur = -0.0025
+xvalue("amp_cacur","dend2.amp_cacur", 1,"", 0, 0 )
+dend2.depth_cacum = 250
+xvalue("depth_cacum","dend2.depth_cacum", 1,"", 0, 0 )
+dend2.tau_cacum = 27
+xvalue("tau_cacum","dend2.tau_cacum", 1,"", 0, 0 )
+dend2.cai0_cacum = 5e-05
+xvalue("cai0_cacum","dend2.cai0_cacum", 1,"", 0, 0 )
+xpanel(702,492)
+}
+{
+xpanel("dend3(0 - 1) (Parameters)", 0)
+xlabel("dend3(0 - 1) (Parameters)")
+xlabel("nseg = 1")
+dend3.L = 1
+xvalue("L","dend3.L", 1,"define_shape()", 0, 0 )
+dend3.cm = 1
+xvalue("cm","dend3.cm", 1,"", 0, 0 )
+dend3.del_cacur = 20
+xvalue("del_cacur","dend3.del_cacur", 1,"", 0, 0 )
+dend3.dur_cacur = 2
+xvalue("dur_cacur","dend3.dur_cacur", 1,"", 0, 0 )
+dend3.amp_cacur = -0.0025
+xvalue("amp_cacur","dend3.amp_cacur", 1,"", 0, 0 )
+dend3.cai0_cadif1 = 5e-05
+xvalue("cai0_cadif1","dend3.cai0_cadif1", 1,"", 0, 0 )
+dend3.cai0_caJpump = 5e-05
+xvalue("cai0_caJpump","dend3.cai0_caJpump", 1,"", 0, 0 )
+dend3.diam = 1
+xvalue("diam","dend3.diam", 1,"", 0, 0 )
+xpanel(1033,492)
+}
+objectvar scene_vector_[1]
+{doNotify()}

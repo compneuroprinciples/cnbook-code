@@ -1,0 +1,79 @@
+/* Accumulation of calcium in a single compartment (spine head).
+     a) No extrusion or decay
+     b) Exponential decay
+     c) Michaelis-Menten instantaneous pump
+   Tested with a square wave calcium current injection.
+
+This code reproduces Figure 6.3 in "Principles of Computational
+Modelling in Neuroscience" by Sterratt, Graham, Gillies and Willshaw.
+
+B. Graham, Computing Science & Maths, University of Stirling
+(Contact: b.graham@cs.stir.ac.uk)
+Last update: 1-7-2011
+*/
+
+load_file("nrngui.hoc")
+load_file("caglobals.hoc")
+create dend1, dend2, dend3
+access dend1
+
+// DD = 4
+
+forall {
+	nseg = 1
+	L = 1			// single 1um^3 compartment
+	diam = DD
+	insert cacur		// artificial step calcium current
+	amp_cacur = IAMP	
+	del_cacur = IDEL
+	dur_cacur = IDUR
+}
+	
+	
+// 1 pool model (no pump or buffering)
+dend1 { insert cadif1
+	TotalBuffer_cadif1 = 0 }
+	
+// simple decay model
+// (note: depth=area/vol=radius/2=diam/4)
+dend2 { insert cacum 
+	depth_cacum = (DD/4)*1000	// (nm)
+	tau_cacum = 27 }		// slow decay
+	
+	
+// 1 pool model (separate instant pump, no buffering)	
+dend3 { insert cadif1
+	insert caJpump
+	Vmax_caJpump = PVmax	// (mmol/ms-cm2)	: slow pump
+	kd_caJpump = PKd	// (mM)		: Borg-Graham
+	TotalBuffer_cadif1 = 0 }
+
+xopen("ca1pool.ses")
+
+// record calcium concs.
+objref rc1, rc2, rc3
+rc1 = new Vector()
+rc1.record(&dend1.cai(0.5), dt)
+rc2 = new Vector()
+rc2.record(&dend2.cai(0.5), dt)
+rc3 = new Vector()
+rc3.record(&dend3.cai(0.5), dt)
+
+objref fc
+
+proc save_ca() {
+
+  fc = new File()
+  fc.wopen("./Results/cai_1pcurr.dat")
+  rc1.printf(fc)
+  fc.close()
+  fc = new File()
+  fc.wopen("./Results/cai_1pdecay.dat")
+  rc2.printf(fc)
+  fc.close()
+  fc = new File()
+  fc.wopen("./Results/cai_1pJpump.dat")
+  rc3.printf(fc)
+  fc.close()
+
+}

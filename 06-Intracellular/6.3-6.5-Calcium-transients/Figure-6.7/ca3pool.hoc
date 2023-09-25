@@ -1,0 +1,62 @@
+/* Accumulation of calcium in a three pool model (Borg-Graham, 1998).
+   Tested with a square wave calcium current injection.
+
+This code reproduces Figure 6.7 in "Principles of Computational
+Modelling in Neuroscience" by Sterratt, Graham, Gillies and Willshaw.
+
+B. Graham, Computing Science & Maths, University of Stirling
+(Contact: b.graham@cs.stir.ac.uk)
+Last update: 1-7-2011
+*/
+
+load_file("nrngui.hoc")
+load_file("caglobals.hoc")
+create dend1
+access dend1
+
+forall {
+	nseg = 1
+	L = 1			// single 1um^3 compartment
+	diam = DD
+	insert cacur		// artificial step calcium current
+	amp_cacur = IAMP	
+	del_cacur = IDEL
+	dur_cacur = IDUR
+}
+
+// 3 pool model (instant pump, no buffering)	
+dend1 { insert ca3c
+	Vmax_ca3c = PVmax	// (mmol/ms-cm2)	: slow pump
+	kd_ca3c = PKd	// (mM)		: Borg-Graham
+	rshell_ca3c = DST	// (um)	: submembrane shell
+	bBu_ca3c = 0 }
+
+xopen("ca3pool.ses")
+
+// record calcium concs.
+objref rc1, rc2, rc3
+rc1 = new Vector()
+rc1.record(&dend1.cai(0.5), dt)
+rc2 = new Vector()
+rc2.record(&dend1.ca2i_ca3c(0.5), dt)
+rc3 = new Vector()
+rc3.record(&dend1.ca3_ca3c(0.5), dt)
+
+objref fc
+
+proc save_ca() {
+
+  fc = new File()
+  fc.wopen("./Results/cais_3c_1ump1um.dat")
+  rc2.printf(fc)
+  fc.close()
+  fc = new File()
+  fc.wopen("./Results/cail_3c_1ump1um.dat")
+  rc1.printf(fc)
+  fc.close()
+  fc = new File()
+  fc.wopen("./Results/caic_3c_1ump1um.dat")
+  rc3.printf(fc)
+  fc.close()
+
+}

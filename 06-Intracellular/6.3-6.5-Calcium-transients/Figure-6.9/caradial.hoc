@@ -1,0 +1,91 @@
+/* Radial diffusion of calcium in a single compartment (spine head).
+   Compare submembrane calcium concentration in multishell models.
+   Michaelis-Menten instantaneous pump.
+   Tested with a square wave calcium current injection.
+
+This code reproduces Figure 6.9 in "Principles of Computational
+Modelling in Neuroscience" by Sterratt, Graham, Gillies and Willshaw.
+
+B. Graham, Computing Science & Maths, University of Stirling
+(Contact: b.graham@cs.stir.ac.uk)
+Last update: 1-7-2011
+*/
+
+load_file("nrngui.hoc")
+load_file("caglobals.hoc")
+create dend1, dend2, dend3
+access dend1
+
+DD = 4
+
+forall {
+	nseg = 1
+	L = 1			// single 1um^3 compartment
+	diam = DD
+	insert cacur		// artificial step calcium current
+	amp_cacur = IAMP	
+	del_cacur = IDEL
+	dur_cacur = IDUR
+}
+	
+// 2 pool model (separate instant pump, no buffering)	
+dend1 { insert ca2p
+	insert caJpump
+	Vmax_caJpump = PVmax	// (mmol/ms-cm2)	: slow pump
+	kd_caJpump = PKd	// (mM)		: Borg-Graham
+	rshell_ca2p = DST	// (um)	: submembrane shell
+	bBu_ca2p = 0 }
+
+// 4 shell model (separate instant pump, no buffering)
+dend2 { insert cadif4
+	insert caJpump
+	Vmax_caJpump = PVmax	// (mmol/ms-cm2)	: (very) slow pump
+	kd_caJpump = PKd	// (mM)		: Borg-Graham
+	DFree_cadif4 = DCa
+	rshell_cadif4 = DST	// (um)	: submembrane shell
+	TotalBuffer_cadif4 = 0 }	
+	
+// 11 shell model (separate instant pump, no buffering)
+dend3 { insert cadif11
+	insert caJpump
+	Vmax_caJpump = PVmax	// (mmol/ms-cm2)	: (very) slow pump
+	kd_caJpump = PKd	// (mM)		: Borg-Graham
+	DFree_cadif11 = DCa
+	rshell_cadif11 = DST	// (um)	: submembrane shell
+	TotalBuffer_cadif11 = 0 }	
+
+xopen("caradial.ses")
+
+// record calcium concs.
+objref rc1, rc2, rc3, rc4
+rc1 = new Vector()
+rc1.record(&dend2.cai(0.5), dt)
+rc2 = new Vector()
+rc2.record(&dend2.ca_cadif4[3](0.5), dt)
+rc3 = new Vector()
+rc3.record(&dend3.cai(0.5), dt)
+rc4 = new Vector()
+rc4.record(&dend3.ca_cadif11[10](0.5), dt)
+
+objref fc
+
+proc save_ca() {
+
+  fc = new File()
+  fc.wopen("./Results/cais_4s_4ump1um.dat")
+  rc1.printf(fc)
+  fc.close()
+  fc = new File()
+  fc.wopen("./Results/caic_4s_4ump1um.dat")
+  rc2.printf(fc)
+  fc.close()
+  fc = new File()
+  fc.wopen("./Results/cais_11s_4ump1um.dat")
+  rc3.printf(fc)
+  fc.close()
+  fc = new File()
+  fc.wopen("./Results/caic_11s_4ump1um.dat")
+  rc4.printf(fc)
+  fc.close()
+
+}

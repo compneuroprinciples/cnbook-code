@@ -1,0 +1,29 @@
+// Global values for calcium modelling in a spine+dendrite
+// BPG 5-2-07
+
+Cai0 = 5e-5	// initial conc. (mM = 50nM)
+
+// Compartment geometry
+DL = 10		// dendrite length (um)
+DD = 1		// dendrite diameter (um)
+DST = 0.1	// dendrite submembrane shell (um)
+SHL = 0.5	// spine head length (um)
+SHD = 0.5	// spine head diameter (um)
+SHT = 0.1	// spine head submembrane shell (um)
+SNL = 1.0	// spine neck length (um)
+//SND = 0.1	// spine neck diameter (um)
+SND = 0.2	// spine neck diameter (um)
+SNT = 0.1	// spine neck submembrane shell (um)
+
+// Square-wave calcium current
+IAMP = -0.0025	// Ca current (mA/cm^2)
+IDEL = 20	// onset delay (msecs)
+IDUR = 2	// duration (msecs)
+
+// Diffusion
+DCa = 0.23	// Ca diffusion coeff (um^2/msec) (Bormann et al)
+DBuff = 0.1	// buffer diffusion coeff (um^2/msec) (Smith Box 3.1)
+
+// Pump kinetics
+PVmax = 1e-11	// slow pump velocity (mmol/ms-cm2)
+PKd = 0.01	// pump half-maximum (mM)	: Borg-Graham
