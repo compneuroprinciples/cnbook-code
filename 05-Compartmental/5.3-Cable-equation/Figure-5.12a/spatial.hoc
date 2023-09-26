@@ -1,0 +1,38 @@
+// Simulation of a passive cable with current injection
+// 
+// This code reproduces Figure 2.17a in "Principles of Computational
+// Modelling in Neuroscience" by Sterratt, Graham, Gillies and Willshaw.
+// 
+// Please report any problems to David Sterratt <david.c.sterratt@ed.ac.uk>
+
+load_file("nrngui.hoc")
+
+// Create an dendrite
+create dend
+access dend
+
+// Set its geometry and insert passive channels
+dend {
+  diam = 1
+  L = 5000
+  nseg = 50
+  insert pas
+  g_pas = 0.0001  
+}
+
+// Set the resting membrane potential
+v_init = -70
+
+// Compute the length constant
+dend lambda = sqrt(diam*1E4/(4*g_pas*Ra))
+print "lambda = ", lambda
+
+// Insert a current clamp at one end
+// The duration is long so as to see the steady state 
+objref stim
+dend stim = new IClamp(0)
+stim.amp = 0.1
+stim.del = 10
+stim.dur = 200
+
+load_file("spatial.ses")

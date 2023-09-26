@@ -1,0 +1,33 @@
+// Simulation of synaptic input to a passive cable
+// 
+// This code reproduces Figure 2.17b in "Principles of Computational
+// Modelling in Neuroscience" by Sterratt, Graham, Gillies and Willshaw.
+// 
+// Please report any problems to David Sterratt <david.c.sterratt@ed.ac.uk>
+
+load_file("nrngui.hoc")
+
+// Create a dendrite
+create dend
+access dend
+
+// Set its geometry and insert passive channels
+dend {
+  diam = 1
+  L = 500
+  nseg = 50
+  insert pas
+  g_pas = 0.0001  
+}
+
+// Set the resting membrane potential
+v_init = -70
+
+// Insert a synapse at one end
+objref syn
+syn = new AlphaSynapse(0)
+syn.gmax = 0.01
+syn.onset = 1
+tstop = 5
+
+load_file("spatial.ses")
