@@ -1,0 +1,121 @@
+/*----------------------------------------------------------------------------
+
+    Gap-junction-connected axons
+    -------------------------------------------------------------
+
+This code reproduces Figure 7.16 in "Principles of Computational
+Modelling in Neuroscience" by Sterratt, Graham, Gillies and Willshaw.
+
+B. Graham, Computing Science & Maths, University of Stirling
+(Contact: b.graham@cs.stir.ac.uk)
+Last update: 1-7-2011
+
+----------------------------------------------------------------------------*/
+
+//----------------------------------------------------------------------------
+//  create axons and insert membrane properties
+//----------------------------------------------------------------------------
+
+create AXON1, AXON2
+access AXON1
+
+
+forall pt3dclear()
+
+AXON1 {
+  pt3dadd(0,0,0,2)
+  pt3dadd(1000,0,0,2)
+}
+
+AXON2 {
+  pt3dadd(0,10,0,2)
+  pt3dadd(1000,10,0,2)
+}
+
+forall {
+  diam=2
+  L=1000
+  nseg=100
+  Ra=200
+  insert hh
+}
+
+
+//----------------------------------------------------------------------------
+//  create gap junction
+//----------------------------------------------------------------------------
+
+objectvar gap1, gap2
+
+AXON1 gap1 = new Ggap(0.5)
+AXON2 gap2 = new Ggap(0.5)
+
+gap1.r = 100	// MOhm
+gap2.r = 100	// MOhm
+
+setpointer gap1.vgap, AXON2.v(0.5)
+setpointer gap2.vgap, AXON1.v(0.5)
+
+
+//----------------------------------------------------------------------------
+//  create AP in AXON1
+//----------------------------------------------------------------------------
+
+objectvar stim
+
+AXON1 stim = new IClamp(0.05)
+stim.del = 2	// ms
+stim.dur = 2
+stim.amp = 0.4
+
+
+
+//----------------------------------------------------------------------------
+//  useful functions
+//----------------------------------------------------------------------------
+
+objref fdat
+
+proc savevecs() {local j
+// savevec(vector object, file name)
+
+  fdat = new File()
+  fdat.wopen($s1)
+  for j=0, $o2.size()-1 {
+    fdat.printf("%g %g %g %g\n", $o2.x[j], $o3.x[j], $o4.x[j], $o5.x[j])
+  }
+  fdat.close()
+}
+
+
+//----------------------------------------------------------------------------
+// record useful data
+//----------------------------------------------------------------------------
+
+// Record postsynaptic voltages
+
+objectvar rect, recV1[3], recV2[3]
+Dt=0.025 // record at 40/ms
+
+rect = new Vector()
+rect.record(&t, Dt)
+
+recV1[0] = new Vector()
+recV1[0].record(&AXON1.v(0.05), Dt)   
+recV1[1] = new Vector()
+recV1[1].record(&AXON1.v(0.5), Dt)   
+recV1[2] = new Vector()
+recV1[2].record(&AXON1.v(0.95), Dt) 
+
+recV2[0] = new Vector()
+recV2[0].record(&AXON2.v(0.05), Dt) 
+recV2[1] = new Vector()
+recV2[1].record(&AXON2.v(0.5), Dt) 
+recV2[2] = new Vector()
+recV2[2].record(&AXON2.v(0.95), Dt)
+
+
+//----------------------------------------------------------------------------
+// Open a saved "session file" that brings up the graphs and run control
+//----------------------------------------------------------------------------
+xopen("axongap.ses")

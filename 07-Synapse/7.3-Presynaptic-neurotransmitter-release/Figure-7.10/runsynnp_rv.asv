@@ -1,0 +1,98 @@
+% runsynnp-rv.m
+% Principles of Computational Modelling in Neuroscience
+% Sterratt, Graham, Gillies, Willshaw
+% Cambridge University Press, June 2011
+% Fig. 7.10: Facilitation and depression in simple dynamic synapse
+% Comparison of release-site and vesicle-state models
+% B. Graham, Computing Science & Maths, University of Stirling
+% Contact: b.graham@cs.stir.ac.uk
+% Last update: 1-7-2011
+
+% Parameters
+slen=400;
+freq=50; %(Hz)
+Pv0=0.2;
+P1=0.05;
+tauf=100; % msecs
+nT=1;
+kn=0.0002; % /msec (time const. 5secs)
+kr=0.0002; % /msec (time const. 5secs)
+ns=0.1;
+D=1;
+tauD=50;
+
+line1='k-';
+line2='k--';
+%line1='k*';
+%line2='ko';
+
+%Generate spikes
+isi = 1000/freq;	% interspike interval (msecs)
+last = slen - rem(slen,isi);
+spt = [isi:isi:last];	% spike times (including first recovery time)
+spcnt = last/isi;	% no. of spikes (includes recovery spike)
+
+% Run synapse model
+% release-site
+[n1,Pv1,frD1,psr1,Pr1] = syn_npD(Pv0,P1,tauf,nT,kn,kr,0,D,tauD,spt);
+[n1s,Pv1s,frD1s,psr1s,Pr1s] = syn_npD(Pv0,P1,tauf,nT,kn,kr,ns,D,tauD,spt);
+% vesicle-state
+[n,Pv,frD,psr,Pr] = syn_npD(Pv0,P1,tauf,0,kn,kr,0,D,tauD,spt);
+[ns,Pvs,frDs,psrs,Prs] = syn_npD(Pv0,P1,tauf,0,kn,kr,ns,D,tauD,spt);
+
+tsize=9;
+lsize=9;
+nsize=9;
+lwidth=0.8;
+
+% Plot n, p and T=np
+subplot(3,2,1);
+mline=plot(spt,Pv,line1);
+set(mline,'LineWidth',lwidth);
+set(gca,'Box','off');
+hold on;
+title('(a) Vesicle-state');
+%xlabel('Time (msecs)','FontSize',lsize,'FontName','Helvetica');
+ylabel('p','FontSize',lsize,'FontName','Helvetica');
+axis([0 400 0 0.4]);
+subplot(3,2,3);
+mline=plot(spt,n,line1);
+set(mline,'LineWidth',lwidth);
+set(gca,'Box','off');
+hold on;
+mline=plot(spt,ns,line2);
+xlabel('Time (msecs)','FontSize',lsize,'FontName','Helvetica');
+ylabel('n','FontSize',lsize,'FontName','Helvetica');
+subplot(3,2,5);
+mline=plot(spt,Pr,line1);
+set(mline,'LineWidth',lwidth);
+set(gca,'Box','off');
+hold on;
+mline=plot(spt,Prs,line2);
+xlabel('Time (msecs)');
+ylabel('T=np','FontSize',lsize,'FontName','Helvetica');
+
+subplot(3,2,2);
+mline=plot(spt,Pv1,line1);
+set(mline,'LineWidth',lwidth);
+set(gca,'Box','off');
+hold on;
+title('(b) Release-site');
+axis([0 400 0 0.4]);
+subplot(3,2,4);
+mline=plot(spt,n1,line1);
+set(mline,'LineWidth',lwidth);
+set(gca,'Box','off');
+hold on;
+mline=plot(spt,n1s,line2);
+subplot(3,2,6);
+mline=plot(spt,Pr1,line1);
+set(mline,'LineWidth',lwidth);
+set(gca,'Box','off');
+hold on;
+mline=plot(spt,Pr1s,line2);
+xlabel('Time (msecs)','FontSize',lsize,'FontName','Helvetica');
+
+set(findobj('Type','line'),'LineWidth',lwidth);
+set(findobj('Type','text'),'FontSize',nsize,'FontName','Helvetica');
+

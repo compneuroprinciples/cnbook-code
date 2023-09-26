@@ -1,0 +1,60 @@
+% pfacil.m
+% Principles of Computational Modelling in Neuroscience
+% Sterratt, Graham, Gillies, Willshaw
+% Cambridge University Press, June 2011
+% Fig. 7.8: Simple, facilitating models of release probability
+% B. Graham, Computing Science & Maths, University of Stirling
+% Contact: b.graham@cs.stir.ac.uk
+% Last update: 1-7-2011
+
+tmax=500;
+dt=20;  % msecs (50Hz)
+t=0:dt:tmax;
+sp=zeros(1,length(t));
+for i=1:5
+    sp(i*dt)=1;  % spike times (not used)
+end
+tauf=100;
+p0=0.1;
+dp=0.1;
+
+% Model 1
+% (as used by e.g. Tsodyks and Markram, 1997 and later works)
+p1=zeros(1,length(t));
+p1(1)=p0;
+fdt=exp(-dt/tauf);
+for i=2:length(t)
+  pp = p1(i-1)+(dp*(1-p1(i-1)));
+  p1(i) = pp+((1-fdt)*(p0-pp));
+end;
+p1inf = (p0*(1-fdt)+dp*fdt)/(1-(1-dp)*fdt)
+
+% Model 2 (not plotted in figure)
+% (as used by Dittman et al, 1998, 2000)
+Kf=1;
+Xf=zeros(1,length(t));
+p2=zeros(1,length(t));
+p2(1)=p0;
+Xfinf=dp/(exp(dt/tauf)-1);
+for i=2:length(t)
+  Xf(i) = Xfinf*(1-exp(-(i-1)*dt/tauf));
+  p2(i) = p0+((1-p0)/(1+(Kf/Xf(i))));
+end;
+p2inf = p0+((1-p0)/(1+(Kf/Xfinf)))
+
+tsize=9;
+lsize=9;
+nsize=9;
+lwidth=0.8;
+
+figure;
+plot(t,p1,'k-');    % Markram & Tsodyks model
+xlabel('t (msecs)','FontSize',lsize,'FontName','Helvetica');
+ylabel('Probability (p)','FontSize',lsize,'FontName','Helvetica');
+axis([0 tmax 0 0.5]);
+set(gca,'Box','off');
+
+set(gca,'Box','off');
+set(findobj('Type','line'),'LineWidth',lwidth);
+set(findobj('Type','text'),'FontSize',nsize,'FontName','Helvetica');
+

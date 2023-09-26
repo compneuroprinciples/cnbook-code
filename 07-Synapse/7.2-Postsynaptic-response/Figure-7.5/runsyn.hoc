@@ -1,0 +1,127 @@
+/*----------------------------------------------------------------------------
+
+    Postsynaptic EPSCs due to 2- and 5-gate AMPA receptor kinetic models
+    --------------------------------------------------------------------
+
+This code reproduces Figure 7.5 in "Principles of Computational
+Modelling in Neuroscience" by Sterratt, Graham, Gillies and Willshaw.
+
+
+B. Graham, Computing Science & Maths, University of Stirling
+(Contact: b.graham@cs.stir.ac.uk)
+Last update: 1-7-2011
+
+----------------------------------------------------------------------------*/
+
+//----------------------------------------------------------------------------
+//  create pre and postsynaptic compartments and insert passive properties
+//----------------------------------------------------------------------------
+
+create AXON, POST2, POST5
+v_init=-65
+ 
+forall {
+  diam=20
+  L=20
+  Ra=200
+  insert pas
+  g_pas=1/50000
+  e_pas=v_init
+}
+
+
+//----------------------------------------------------------------------------
+//  create AMPA receptors
+//----------------------------------------------------------------------------
+
+objectvar ampa2, ampa5
+
+// Simple 2-gate scheme (see Destexhe et al, 1998)
+POST2 ampa2 = new AMPA2s(0.5)
+Alpha_AMPA2s = 4 // /mM/ms
+Beta_AMPA2s = 1 // /ms
+Cdur_AMPA2s = 1	// msecs
+weight2 = 0.001	// gmax=1nS
+
+// Desensitising 5-gate scheme
+POST5 ampa5 = new AMPA5s(0.5)
+ampa5.gmax = 1	// nS
+Erev_AMPA5s = 0	// mV
+Camp_AMPA5s = 1	// mM
+Cdur_AMPA5s = 1	// msecs
+Rb_AMPA5s = 13 // /mM/ms
+Ru1_AMPA5s = 0.3 // /ms
+Ru2_AMPA5s = 200 // /ms
+Rd_AMPA5s = 10 // /ms
+Rr_AMPA5s = 0.02 // /ms
+Ro_AMPA5s = 100 // /ms
+Rc_AMPA5s = 1 // /ms
+weight5 = 1
+
+
+
+//----------------------------------------------------------------------------
+//  create presynaptic stimulus
+//----------------------------------------------------------------------------
+
+objectvar stim, nc2, nc5
+
+AXON stim = new NetStim(0.5)
+stim.interval = 10	// 100Hz
+stim.number = 10
+stim.start = 10
+stim.noise = 0
+nc2 = new NetCon(stim, ampa2, -20, 1, weight2)
+nc5 = new NetCon(stim, ampa5, -20, 1, weight5)
+
+
+//----------------------------------------------------------------------------
+//  useful functions
+//----------------------------------------------------------------------------
+
+objref fp
+
+proc savevec() {local j
+// savevec(vector object, file name)
+  fp = new File()
+  fp.wopen($s2)
+  $o1.printf(fp)
+  fp.close()
+}
+
+
+//----------------------------------------------------------------------------
+// record useful data
+//----------------------------------------------------------------------------
+
+// Record postsynaptic currents
+
+objectvar vcl2, recI2, recg2
+objectvar vcl5, recI5, recg5
+Dt=0.25
+
+// voltage clamp postsynaptic cells
+POST2 vcl2 = new VClamp(0.5)
+vcl2.dur[0] = 1000
+vcl2.amp[0] = v_init
+POST5 vcl5 = new VClamp(0.5)
+vcl5.dur[0] = 1000
+vcl5.amp[0] = v_init
+
+// record VC current (EPSCs)
+recI2 = new Vector()
+recI2.record(&vcl2.i, Dt)   // record at 4/ms
+recI5 = new Vector()
+recI5.record(&vcl5.i, Dt)   // record at 4/ms
+
+// record synaptic conductance
+recg2 = new Vector()
+recg2.record(&ampa5.g, Dt)   // record at 4/ms
+recg5 = new Vector()
+recg5.record(&ampa5.g, Dt)   // record at 4/ms
+
+
+//----------------------------------------------------------------------------
+// Open a saved "session file" that brings up the graphs and run control
+//----------------------------------------------------------------------------
+xopen("epscs.ses")
