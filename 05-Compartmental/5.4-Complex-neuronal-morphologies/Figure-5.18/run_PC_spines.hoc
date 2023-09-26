@@ -1,0 +1,115 @@
+/* run_CA1.hoc
+   Construct and simulate passive CA1 pyramidal cell with/without spines
+   (after Holmes and Rall, Fig. 2, in Single Neuron Computation, Academic Press, 1992)
+
+This code reproduces Figure 4.6 in "Principles of Computational
+Modelling in Neuroscience" by Sterratt, Graham, Gillies and Willshaw.
+
+B. Graham, Computing Science & Maths, University of Stirling
+(Contact: b.graham@cs.stir.ac.uk)
+Last update: 1-7-2011
+*/
+
+load_file("nrngui.hoc")
+
+xopen("globals.hoc")
+xopen("Mig_sec5038804.hoc")             // Migliore section file
+xopen("spines.hoc")
+
+
+// create spines
+// createnspine(SectionList object, no. of synapses, random seed)
+//createnspine(dendrite_list, nspine, my_seed)	// Migliore dendrites
+
+// add synapse to one spine in fixed location
+// onespine(SectionList object, location)
+onespine(apical_list, 500)		// Migliore apical dendrites
+access sh
+objref syn, spike, nc
+syn = new ExpSyn(0.5)
+syn.tau = STAU	// msec
+syn.e = SREV	// mV
+spike = new NetStim(0.5)
+spike.start = 0
+spike.number = 1
+nc = new NetCon(spike, syn, -20, 1, SWGT)
+
+access soma
+
+// insert passive properties
+forall { insert pas g_pas=1/Rm e_pas=E_pas cm=Cm Ra=Ri }
+freq = 50
+forall { nseg = int((L/(0.1*lambda_f(freq))+.9)/2)*2 + 1  }
+
+// adjust Rm and Cm to account for spines (20,000 spines gives 1.4 times surface area)
+//forall { g_pas=1.4/Rm cm=Cm*1.4 }
+
+forall {print secname()}
+segcnt = 0
+forall { segcnt = segcnt + nseg}
+print "Number of segments = ", segcnt
+length = 0
+forall { length = length + L}
+print "Total length = ", length
+totarea=0
+forall {for (x) totarea=totarea+area(x)}
+print "Total surface area = ", totarea
+somaarea=0
+forsec soma_list {for (x) somaarea=somaarea+area(x)}
+print "Soma surface area = ", somaarea
+axonarea=0
+forsec axon_list {for (x) axonarea=axonarea+area(x)}
+print "Axon surface area = ", axonarea
+dendarea=0
+forsec dendrite_list {for (x) dendarea=dendarea+area(x)}
+print "Dendrite surface area = ", dendarea
+
+
+finitialize(E_pas)  /* v=-65 for all segs., also does t=0 */
+
+objref mycell
+mycell = new Shape()
+mycell.point_mark(syn, 3)
+
+proc remove_spines() {
+  forsec "shead" delete_section()
+  forsec "sneck" delete_section()
+}
+
+xpanel("Control")
+xbutton("Add spines", "createnspine(dendrite_list, nspine, my_seed)")
+xbutton("Remove spines", "remove_spines()")
+xbutton("Compensate membrane", "forall { g_pas=1.4/Rm cm=Cm*1.4 }")
+xbutton("Decompensate", "forall { g_pas=1.0/Rm cm=Cm }")
+xpanel()
+
+xopen("one_syn.ses")
+
+// record voltage transients
+
+objref rvsp, rvso
+rvsp = new Vector()
+rvsp.record(&sh.v(0.5), dt)	// spine head
+rvso = new Vector()
+rvso.record(&soma.v(0.5), dt)	// soma
+
+objref fc
+strdef fn
+
+proc save_V() {
+
+  fc = new File()
+  //fc.wopen("./Results/spine_ns_V.dat")	// no spines
+  //fc.wopen("./Results/spine_ws_V.dat")	// with spines
+  fc.wopen("./Results/spine_cs_V.dat")		// compensate spines
+  rvsp.printf(fc)
+  fc.close()
+  
+  fc = new File()
+  //fc.wopen("./Results/soma_ns_V.dat")		// no spines
+  //fc.wopen("./Results/soma_ws_V.dat")		// with spines
+  fc.wopen("./Results/soma_cs_V.dat")		// compensate spines
+  rvso.printf(fc)
+  fc.close()
+
+}

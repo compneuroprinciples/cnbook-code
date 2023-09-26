@@ -1,0 +1,18 @@
+//public soma, axon, dendrite, apical_dend, user5
+
+objref soma_list, axon_list, dendrite_list, basal_list, apical_list, trunk_list, oblique_list
+soma_list = new SectionList()
+axon_list = new SectionList()
+dendrite_list = new SectionList()
+basal_list = new SectionList()
+apical_list = new SectionList()
+trunk_list = new SectionList()
+oblique_list = new SectionList()
+
+{create axon[1]}
+{create soma[1]}
+{create dendrite[52]}
+{create apical_dend[70]}
+{create user5[49]}
+
+xopen("Mig_geo5038804.hoc")             // Migliore geometry file

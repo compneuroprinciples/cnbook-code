@@ -1,0 +1,131 @@
+/* spines.hoc
+   Procedures for setting up spines.
+   BPG 16-2-10
+
+   RandomLocation - relocates a spine to a random location (object)
+   createnspine - creates a given number of spines
+*/
+
+
+objectvar random, ran
+random = new Random()
+ran = new Random()
+
+objectvar syn[1], shr, snr
+objectvar randomize_location
+
+create shead[1], sneck[1], sh, sn
+
+// initial spines (maybe overridden)
+sneck[0].L = sneck_len
+sneck[0].diam = sneck_diam
+shead[0].L = shead_len
+shead[0].diam = shead_diam
+sn.L = sneck_len
+sn.diam = sneck_diam
+sh.L = shead_len
+sh.diam = shead_diam
+
+
+
+/*
+?2 RandomLocation
+
+rl = new RandomLocation(SectionList)
+rl.loc(PointProcess)
+
+relocates the PointProcess to a random location with respect to
+uniform distribution based on position.
+SectionList defines the set of sections to sample.
+*/
+
+begintemplate RandomLocation
+
+public loc
+objectvar seclist, ran
+
+proc init() {
+    seclist = $o1
+    ran = new Random($2)
+    total_length = 0
+    forsec seclist { total_length = total_length + L }
+}
+
+// randomize location of spine
+proc loc() {local l, done, rpos, secx
+  //randomize_location.loc(snr, shr)
+  rpos = ran.uniform(0, total_length)
+  done = 0
+  l = 0
+  distance()  // assumes soma is currently accessed               
+  forsec seclist {
+    l = l + L
+    if (l > rpos) {
+      secx = (rpos - l + L)/L
+      // construct spine in new location
+      connect $o1.sec(0), secx
+      $o1.sec connect $o2.sec(0), 1
+      rpos = 1e20   // a break would screw up the stack?
+    }
+  }
+}
+
+endtemplate RandomLocation
+
+
+
+/*
+Routine to create a fixed number of spines at random locations
+within a part of the dendritic tree (as specified by a section list).
+*/
+
+proc createnspine() {local nsp, i
+// creates $2 spines and randomizes their location
+// createnspine(SectionList object, no. of spines, location seed (random))
+  nsp = $2
+  create shead[nspine], sneck[nspine]
+  randomize_location = new RandomLocation($o1, $3)
+  for i = 0, nsp-1 {
+    sneck[i].L = sneck_len
+    sneck[i].diam = sneck_diam
+    shead[i].L = shead_len
+    shead[i].diam = shead_diam
+    sneck[i] {insert pas g_pas=1/Rm e_pas=E_pas cm=Cm Ra=Ri}
+    shead[i] {insert pas g_pas=1/Rm e_pas=E_pas cm=Cm Ra=Ri}
+    sneck[i] snr = new SectionRef()
+    shead[i] shr = new SectionRef()
+    randomize_location.loc(snr, shr)
+  }
+}
+
+
+/*
+Routine to create a spine at a fixed location
+within a part of the dendritic tree (as specified by a section list).
+*/
+
+proc onespine() {local rpos, l, secx
+// creates one spine
+// onespine(SectionList object, location)
+  rpos = $2
+  sn.L = sneck_len
+  sn.diam = sneck_diam
+  sh.L = shead_len
+  sh.diam = shead_diam
+  sn {insert pas g_pas=1/Rm e_pas=E_pas cm=Cm Ra=Ri}
+  sh {insert pas g_pas=1/Rm e_pas=E_pas cm=Cm Ra=Ri}
+  // place synapse in desired location
+  l = 0
+  access soma
+  distance()  // assumes soma is currently accessed               
+  forsec $o1 {
+    l = l + L
+    if (l > rpos) {
+      secx = (rpos - l + L)/L
+      connect sn(0), secx
+      sn connect sh(0), 1
+      rpos = 1e20   // a break would screw up the stack?
+    }
+  }
+}
+

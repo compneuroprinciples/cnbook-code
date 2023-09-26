@@ -1,0 +1,30 @@
+/* Global constants for spine simulations
+   Version for book (BPG 16-2-10)
+*/
+
+// Run control
+my_seed = 16
+nspine = 20000  // number of spines
+
+// Passive properties (from Migliore et al 2005)
+celsius = 35
+Rm = 28000 /* Ohm cm^2 */
+Cm = 1.0 /* uF cm^-2 */
+Ri = 150 /* Ohm cm */
+E_pas = -65 /* mV */
+
+// Spines (mushroom - see Koch, 1999 pg 284)
+sneck_diam = 0.2 /* um */
+sneck_len = 0.5 /* um */
+shead_diam = 0.5 /* um */
+shead_len = 0.5 /* um */
+
+// Synaptic input
+STAU = 0.2	// msec
+SREV = 0	// reversal potential (mV)
+SWGT = 0.01	// weight
+
+// Square-wave injected current
+IAMP = 0.4	// current (mA/cm^2)
+IDEL = 2	// onset delay (msecs)
+IDUR = 0.2	// duration (msecs)

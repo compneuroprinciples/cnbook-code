@@ -1,0 +1,111 @@
+/* Spines added to a passive dendritic segment.
+   Electrical response recorded at different points when synaptic input into one spine.
+   (After Wolf et al 1991, as shown in Fig. 7 of Shepherd, "Canonical neurons" in Single
+   Neuron Computation, Academic Press, 1992)
+
+This code reproduces Figure 4.4 in "Principles of Computational
+Modelling in Neuroscience" by Sterratt, Graham, Gillies and Willshaw.
+
+B. Graham, Computing Science & Maths, University of Stirling
+(Contact: b.graham@cs.stir.ac.uk)
+Last update: 1-7-2011
+*/
+
+load_file("nrngui.hoc")
+load_file("globals.hoc")
+
+NSPI = 3
+create shead[NSPI], sneck[NSPI], dend
+access shead[0]
+
+dend { 
+	L = 1000
+	diam = 2
+	nseg = 1000
+}
+
+// 3 spines, 10% of dendritic length apart, around middle of dendrite
+start = 0.4
+dist = 0.1
+for i=0, NSPI-1 {
+  shead[i] {
+	nseg = 1
+	L = shead_len	
+	diam = shead_diam
+  }
+  sneck[i] {
+	nseg = 1
+	L = sneck_len	
+	diam = sneck_diam
+  }
+  connect shead[i](0), sneck[i](1)
+  connect sneck[i](0), dend(start+i*dist)
+}
+
+forall { insert pas g_pas=1/Rm e_pas=E_pas cm=Cm Ra=Ri }
+
+
+objref syn, spike, nc
+syn = new ExpSyn(0.5)
+syn.tau = STAU	// msec
+syn.e = SREV	// mV
+spike = new NetStim(0.5)
+spike.start = 0
+spike.number = 1
+nc = new NetCon(spike, syn, -20, 1, SWGT)
+
+// alternative input
+objref Iinj
+//Iinj = new IClamp(0.5)		// step current in spine head
+//Iinj.amp = IAMP	
+//Iinj.del = IDEL
+//Iinj.dur = IDUR
+
+
+xopen("spine_circ.ses")
+
+// record voltage transients
+
+objref rvs[NSPI], rvds, rvdm, rvde
+for i=0, NSPI-1 {
+  rvs[i] = new Vector()
+  rvs[i].record(&shead[i].v(0.5), dt)
+}
+rvds = new Vector()
+rvds.record(&dend.v(start), dt)	// base of activate spine
+rvdm = new Vector()
+rvdm.record(&dend.v(start+dist), dt)	// base of next spine
+//rvdm.record(&dend.v(0.5), dt)	// middle of dendrite
+rvde = new Vector()
+rvde.record(&dend.v(start+2*dist), dt)	// base of final spine
+//rvde.record(&dend.v(0.05), dt)	// one end of dendrite
+
+objref fc
+strdef fn
+
+proc save_V() {
+
+  for i=0, NSPI-1 {
+    sprint(fn, "./Results/spine%d_V.dat", i)
+    fc = new File()
+    fc.wopen(fn)
+    rvs[i].printf(fc)
+    fc.close()
+  }
+    
+  fc = new File()
+  fc.wopen("./Results/dend_syn_V.dat")
+  rvds.printf(fc)
+  fc.close()
+
+  fc = new File()
+  fc.wopen("./Results/dend_mid_V.dat")
+  rvdm.printf(fc)
+  fc.close()
+  
+  fc = new File()
+  fc.wopen("./Results/dend_end_V.dat")
+  rvde.printf(fc)
+  fc.close()
+
+}
