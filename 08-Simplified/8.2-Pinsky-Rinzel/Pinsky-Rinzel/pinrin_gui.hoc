@@ -1,0 +1,38 @@
+// Simulation of Pinsky-Rinzel neuron
+// 
+// This code reproduces Figure 8.2 in "Principles of Computational
+// Modelling in Neuroscience" by Sterratt, Graham, Gillies and Willshaw.
+// 
+// Please report any problems to David Sterratt <david.c.sterratt@ed.ac.uk>
+
+// Load the Pinsky-Rinzel cell template
+load_file("pinrin.hoc")
+
+// Create a Pinsky-Rinzel cell
+objref onecell
+onecell = new rinzelnrn()
+access onecell.soma
+
+// Load the graphs
+load_file("pinrin_gui.ses")
+
+// Set the temperature
+celsius=37
+
+// Insert current clamp
+objref iclamp
+iclamp = IClamp[0]
+// Set current clamp given argument in uA cm^-2. The argument
+// corresponds to the meaning of I_s in the Pinzel and
+// Rinsky paper
+proc set_iclamp() {
+     iclamp.amp = $1*1e-3/onecell.p
+}
+
+// Create parameters panel
+gc = 2.1
+Is = 0.75
+xpanel("Parameters")
+xvalue("gc (mS/cm2)", "gc", 1, "onecell.set_gc(gc)")
+xvalue("Is (uA/cm2)", "Is", 1, "set_iclamp(Is)")
+xpanel(0, 510)
